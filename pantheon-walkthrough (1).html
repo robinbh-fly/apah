@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pantheon walkthrough</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Alegreya+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#1d2126;
+  --panel:rgba(233,227,215,.93);
+  --ink:#2b2724;
+  --muted:#675e55;
+  --line:rgba(60,48,38,.22);
+  --accent:#7B2D26;
+  --accent-ink:#f4efe6;
+  --gold:#B88E33;
+  --hover:rgba(123,45,38,.08);
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --panel:rgba(34,37,41,.92);
+    --ink:#ece6da;
+    --muted:#a99f92;
+    --line:rgba(255,255,255,.15);
+    --accent:#a3463b;
+    --accent-ink:#f7f1e8;
+    --gold:#D9B45A;
+    --hover:rgba(217,180,90,.1);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --panel:rgba(34,37,41,.92);
+  --ink:#ece6da;
+  --muted:#a99f92;
+  --line:rgba(255,255,255,.15);
+  --accent:#a3463b;
+  --accent-ink:#f7f1e8;
+  --gold:#D9B45A;
+  --hover:rgba(217,180,90,.1);
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Alegreya Sans",system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased}
+#scene{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#scene.dragging{cursor:grabbing}
+#scene.pointing{cursor:pointer}
+
+.hud-top,.hud-bottom{position:fixed;left:0;right:0;z-index:5;display:flex;justify-content:space-between;gap:12px;pointer-events:none}
+.hud-top{top:0;align-items:flex-start;padding:calc(env(safe-area-inset-top,0px) + 14px) calc(env(safe-area-inset-right,0px) + 14px) 0 calc(env(safe-area-inset-left,0px) + 14px)}
+.hud-bottom{bottom:0;align-items:flex-end;padding:0 calc(env(safe-area-inset-right,0px) + 14px) calc(env(safe-area-inset-bottom,0px) + 14px) calc(env(safe-area-inset-left,0px) + 14px)}
+
+.panel{pointer-events:auto;background:var(--panel);color:var(--ink);border-top:3px solid var(--gold);border-radius:3px;box-shadow:0 10px 34px rgba(12,10,8,.28);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+
+.title-card{padding:14px 16px 10px;width:17.5rem;max-width:100%}
+.title-card h1{font-family:"Marcellus","Trajan Pro",Georgia,serif;font-weight:400;font-size:2rem;line-height:1;letter-spacing:.06em;margin:0}
+.title-card .sub{margin:.35rem 0 .6rem;color:var(--muted);font-size:.98rem;line-height:1.3}
+.toggle{font:inherit;font-weight:500;background:none;border:0;color:var(--ink);padding:.35rem 0;cursor:pointer;display:flex;align-items:center;gap:.4rem;width:100%;border-top:1px solid var(--line)}
+.toggle::after{content:"";width:.45rem;height:.45rem;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg) translateY(-2px);margin-left:auto;transition:transform .2s}
+.toggle[aria-expanded="true"]::after{transform:rotate(-135deg) translateY(-2px)}
+#stops{list-style:none;margin:0;padding:.2rem 0 0}
+#stops[hidden]{display:none}
+#stops button{font:inherit;display:grid;grid-template-columns:1.6rem 1fr;align-items:baseline;width:100%;text-align:left;background:none;border:0;color:var(--ink);padding:.3rem .35rem;border-radius:3px;cursor:pointer;font-size:1rem}
+#stops button:hover{background:var(--hover)}
+#stops button .n{font-family:"Marcellus",Georgia,serif;color:var(--gold)}
+#stops button[aria-current="step"]{background:var(--hover);font-weight:700}
+
+.sun-card{padding:12px 16px 12px;width:16.5rem;max-width:100%}
+.sun-card label{display:flex;justify-content:space-between;font-weight:500;font-size:1rem;gap:.5rem}
+.sun-card output{font-family:"Marcellus",Georgia,serif;color:var(--gold)}
+.sun-card input{width:100%;accent-color:var(--accent);margin:.5rem 0 .3rem}
+.sun-card .hint{margin:0;color:var(--muted);font-size:.9rem;line-height:1.35}
+
+.info{padding:14px 18px 14px;width:26rem;max-width:100%;position:relative;max-height:70vh;overflow-y:auto}
+.info[hidden]{display:none}
+.info .num{margin:0 0 .15rem;color:var(--muted);font-size:.92rem}
+.info h2{font-family:"Marcellus",Georgia,serif;font-weight:400;font-size:1.55rem;line-height:1.15;margin:0 2rem .45rem 0;letter-spacing:.02em}
+.info .text{margin:0 0 .8rem;font-size:1.05rem;line-height:1.5;max-height:32vh;overflow:auto}
+.quiz{margin:0 0 .8rem;border-top:1px solid var(--line);padding-top:.55rem}
+.quiz[hidden]{display:none}
+.quiz summary{cursor:pointer;font-weight:700;list-style:none;display:flex;align-items:center;gap:.5rem;padding:.15rem 0;border-radius:3px}
+.quiz summary::-webkit-details-marker{display:none}
+.quiz summary::before{content:"";width:.4rem;height:.4rem;border-right:2px solid var(--gold);border-bottom:2px solid var(--gold);transform:rotate(-45deg);transition:transform .2s}
+.quiz[open] summary::before{transform:rotate(45deg)}
+.quiz summary:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.quiz .q{margin:.5rem 0 .5rem;font-size:1.02rem;line-height:1.4}
+.quiz .opts{display:grid;gap:.35rem}
+.quiz .opt{font:inherit;text-align:left;font-size:.98rem;line-height:1.3;padding:.42rem .65rem;border:1px solid var(--line);border-radius:3px;background:transparent;color:var(--ink);cursor:pointer}
+.quiz .opt:hover:not(:disabled){background:var(--hover)}
+.quiz .opt:disabled{cursor:default;color:var(--ink)}
+.quiz .opt.right{border:2px solid var(--gold);background:var(--hover);font-weight:700}
+.quiz .opt.wrong{border-color:var(--accent);text-decoration:line-through;opacity:.75}
+.quiz .fb{margin:.55rem 0 0;font-size:.98rem;line-height:1.45}
+.quiz .fb[hidden]{display:none}
+.quiz .fb b{color:var(--accent)}
+.quiz .retry{margin-top:.5rem;font-size:.92rem;padding:.3rem .7rem}
+@media (prefers-reduced-motion:reduce){.quiz summary::before{transition:none}}
+.actions{display:flex;gap:.5rem;flex-wrap:wrap}
+.btn{font:inherit;font-weight:500;font-size:1rem;padding:.45rem .9rem;border-radius:3px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer}
+.btn:hover{background:var(--hover)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.1)}
+.close{position:absolute;top:10px;right:10px;width:2rem;height:2rem;border:0;background:none;color:var(--muted);cursor:pointer;border-radius:3px;font-size:1.4rem;line-height:1}
+.close:hover{background:var(--hover);color:var(--ink)}
+.reopen{pointer-events:auto}
+.reopen[hidden]{display:none}
+
+.pad{pointer-events:auto;display:none;grid-template-columns:repeat(3,52px);grid-template-rows:repeat(2,52px);gap:6px}
+.coarse .pad{display:grid}
+.pad button{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:50%;font-size:1.1rem;touch-action:none;user-select:none;-webkit-user-select:none;box-shadow:0 6px 18px rgba(12,10,8,.25)}
+.pad button:active{background:var(--accent);color:var(--accent-ink)}
+.pad .f{grid-column:2;grid-row:1}.pad .l{grid-column:1;grid-row:2}.pad .b{grid-column:2;grid-row:2}.pad .r{grid-column:3;grid-row:2}
+
+.tip{position:fixed;z-index:9;pointer-events:none;background:var(--panel);color:var(--ink);padding:.3rem .6rem;border-radius:3px;font-size:.95rem;border-left:3px solid var(--gold);box-shadow:0 6px 18px rgba(12,10,8,.25);transform:translate(14px,14px);white-space:nowrap}
+.tip[hidden]{display:none}
+
+button:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+@media (max-width:700px){
+  .hud-top{flex-direction:column;gap:8px}
+  .title-card,.sun-card{width:100%}
+  .title-card{display:grid;grid-template-columns:auto 1fr;column-gap:.8rem;align-items:baseline;padding:10px 14px 6px}
+  .title-card h1{font-size:1.45rem}
+  .title-card .sub{margin:0;font-size:.88rem}
+  .title-card .toggle,.title-card #stops{grid-column:1 / -1}
+  .sun-card{padding:8px 14px}
+  .sun-card .hint{display:none}
+  .info{width:100%}
+  .info h2{font-size:1.3rem}
+  .info .text{font-size:1rem;max-height:26vh}
+  .info-open.coarse .pad{display:none}
+}
+@media (prefers-reduced-motion:reduce){.toggle::after{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="scene" aria-label="Walkable 3D model of the Pantheon in Rome"></canvas>
+
+<div class="hud-top">
+  <header class="panel title-card">
+    <h1>Pantheon</h1>
+    <p class="sub">Rome, rebuilt under Hadrian, c. 118–125 CE</p>
+    <button class="toggle" id="stopsToggle" aria-expanded="true" aria-controls="stops">Tour stops</button>
+    <ol id="stops"></ol>
+  </header>
+  <div class="panel sun-card">
+    <label for="sun">Sunlight <output id="sunOut" for="sun">11:00 AM</output></label>
+    <input type="range" id="sun" min="6.5" max="17.5" step="0.25" value="11">
+    <p class="hint" id="hint">Drag to look around. Walk with W A S D or the arrow keys; hold Shift to go faster.</p>
+  </div>
+</div>
+
+<div class="hud-bottom">
+  <section class="panel info" id="info" aria-live="polite">
+    <button class="close" id="close" aria-label="Hide stop info">×</button>
+    <p class="num" id="infoNum"></p>
+    <h2 id="infoTitle"></h2>
+    <p class="text" id="infoText"></p>
+    <details class="quiz" id="quiz" hidden></details>
+    <div class="actions">
+      <button class="btn" id="prev">Previous</button>
+      <button class="btn primary" id="next">Next stop</button>
+    </div>
+  </section>
+  <button class="btn panel reopen" id="reopen" hidden>Show stop info</button>
+  <div class="pad" id="pad" aria-label="Walk controls">
+    <button class="f" data-dir="f" aria-label="Walk forward">▲</button>
+    <button class="l" data-dir="l" aria-label="Step left">◀</button>
+    <button class="b" data-dir="b" aria-label="Walk back">▼</button>
+    <button class="r" data-dir="r" aria-label="Step right">▶</button>
+  </div>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+const V3 = THREE.Vector3;
+const R = 21.6;          // interior radius (43.3 m diameter)
+const H = 21.6;          // height of the drum; dome springs here
+const OCULUS = 4.1;      // oculus radius
+const OUTER = 27;        // outer drum radius (walls ~6 m thick)
+const EYE = 1.7;
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const coarse = matchMedia('(pointer: coarse)').matches;
+if (coarse) document.body.classList.add('coarse');
+document.getElementById('hint').textContent = coarse
+  ? 'Drag to look around. Use the arrows to walk.'
+  : 'Drag to look around. Walk with W A S D or the arrow keys; hold Shift to go faster.';
+
+/* ---------- renderer ---------- */
+const canvas = document.getElementById('scene');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const maxAniso = renderer.capabilities.getMaxAnisotropy();
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(70, 1, 0.1, 1400);
+camera.rotation.order = 'YXZ';
+
+/* ---------- helpers ---------- */
+function tex(w, h, draw, rx, ry){
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d'); draw(g, w, h);
+  const t = new THREE.CanvasTexture(c);
+  t.encoding = THREE.sRGBEncoding; t.anisotropy = maxAniso;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(rx || 1, ry || 1);
+  t._draw = draw; t._canvas = c;
+  return t;
+}
+function speckle(g, w, h, n, a){
+  for (let i = 0; i < n; i++){
+    g.fillStyle = Math.random() < .5 ? `rgba(0,0,0,${Math.random()*a})` : `rgba(255,255,255,${Math.random()*a})`;
+    g.fillRect(Math.random()*w, Math.random()*h, 2, 2);
+  }
+}
+function std(color, o){ return new THREE.MeshStandardMaterial(Object.assign({color, roughness:.85, metalness:0}, o || {})); }
+function add(geo, mat, x, y, z, parent, cast){
+  const m = new THREE.Mesh(geo, mat);
+  m.position.set(x || 0, y || 0, z || 0);
+  m.castShadow = cast !== false; m.receiveShadow = true;
+  (parent || scene).add(m); return m;
+}
+
+/* ---------- textures ---------- */
+const marbleTex = tex(512, 512, (g, w, h) => {
+  g.fillStyle = '#f2eee6'; g.fillRect(0, 0, w, h);
+  g.lineWidth = 1.2;
+  for (let i = 0; i < 26; i++){
+    g.strokeStyle = `rgba(120,110,100,${.08 + Math.random()*.12})`;
+    g.beginPath(); let x = Math.random()*w, y = Math.random()*h; g.moveTo(x, y);
+    for (let k = 0; k < 4; k++){ g.bezierCurveTo(x+Math.random()*120-60, y+Math.random()*120-60, x+Math.random()*160-80, y+Math.random()*160-80, x+=Math.random()*180-90, y+=Math.random()*180-90); }
+    g.stroke();
+  }
+  speckle(g, w, h, 5000, .06);
+}, 6, 1);
+
+const floorTex = tex(512, 512, (g) => {
+  g.fillStyle = '#b39046'; g.fillRect(0, 0, 512, 512);
+  for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++){
+    const x = i*256, y = j*256, alt = (i + j) % 2;
+    g.fillStyle = alt ? '#d4ccbd' : '#c8aa62'; g.fillRect(x+10, y+10, 236, 236);
+    if (!alt){
+      g.fillStyle = '#e9e2d4'; g.beginPath(); g.arc(x+128, y+128, 104, 0, Math.PI*2); g.fill();
+      g.fillStyle = '#7B2D26'; g.beginPath(); g.arc(x+128, y+128, 94, 0, Math.PI*2); g.fill();
+    } else {
+      g.fillStyle = '#8a3a30'; g.fillRect(x+40, y+40, 176, 176);
+      g.fillStyle = '#5d6166'; g.fillRect(x+50, y+50, 156, 156);
+    }
+  }
+  speckle(g, 512, 512, 9000, .12);
+}, 7.2, 7.2);
+
+const atticTex = tex(1024, 256, (g) => {
+  g.fillStyle = '#e3dccf'; g.fillRect(0, 0, 1024, 256);
+  for (let p = 0; p < 2; p++){
+    const o = p*512;
+    g.fillStyle = '#efe9de'; g.fillRect(o+20, 20, 60, 236);
+    g.strokeStyle = 'rgba(90,80,70,.35)'; g.lineWidth = 3; g.strokeRect(o+20, 20, 60, 236);
+    g.fillStyle = '#b9ad9a'; g.fillRect(o+190, 60, 200, 150);
+    g.fillStyle = '#8a3a30'; g.fillRect(o+212, 82, 156, 106);
+    g.strokeStyle = 'rgba(90,80,70,.45)'; g.strokeRect(o+190, 60, 200, 150);
+  }
+  g.fillStyle = 'rgba(90,80,70,.3)'; g.fillRect(0, 0, 1024, 12);
+  speckle(g, 1024, 256, 3000, .07);
+}, 14, 1);
+
+const brickTex = tex(256, 256, (g) => {
+  g.fillStyle = '#b9a58a'; g.fillRect(0, 0, 256, 256);
+  for (let r = 0; r < 16; r++) for (let c = 0; c < 5; c++){
+    const off = (r % 2) * 26;
+    g.fillStyle = ['#a7714f','#9c6648','#b07a56','#a26c4c'][(r*3+c)%4];
+    g.fillRect(c*52 - off + 2, r*16 + 2, 48, 12);
+  }
+  speckle(g, 256, 256, 3000, .1);
+}, 10, 6);
+
+const cobbleTex = tex(256, 256, (g) => {
+  g.fillStyle = '#5e5850'; g.fillRect(0, 0, 256, 256);
+  for (let r = 0; r < 16; r++) for (let c = 0; c < 16; c++){
+    const s = 60 + Math.random()*40;
+    g.fillStyle = `rgb(${s+20},${s+14},${s+4})`;
+    g.beginPath();
+    if (g.roundRect) g.roundRect(c*16+1.5, r*16+1.5, 13, 13, 4); else g.rect(c*16+1.5, r*16+1.5, 13, 13);
+    g.fill();
+  }
+  speckle(g, 256, 256, 2500, .12);
+}, 80, 80);
+
+const facadeBase = (g) => {
+  g.fillStyle = '#d29a62'; g.fillRect(0, 0, 256, 256);
+  speckle(g, 256, 256, 2500, .08);
+  for (let c = 0; c < 2; c++){
+    g.fillStyle = '#efe2c9'; g.fillRect(c*128+34, 52, 60, 120);
+    g.fillStyle = '#3f5a48'; g.fillRect(c*128+40, 58, 22, 108); g.fillRect(c*128+66, 58, 22, 108);
+    g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(c*128+63, 58, 3, 108);
+  }
+};
+const facadeTex = tex(256, 256, facadeBase);
+
+const stoneTex = tex(256, 256, (g) => {
+  g.fillStyle = '#c9c0b0'; g.fillRect(0, 0, 256, 256);
+  g.strokeStyle = 'rgba(80,70,60,.25)'; g.lineWidth = 2;
+  for (let i = 0; i <= 4; i++){ g.beginPath(); g.moveTo(i*64, 0); g.lineTo(i*64, 256); g.stroke(); g.beginPath(); g.moveTo(0, i*64); g.lineTo(256, i*64); g.stroke(); }
+  speckle(g, 256, 256, 4000, .1);
+}, 1, 1);
+
+/* ---------- materials ---------- */
+const M = {
+  wall: std('#ddd4c4', {map: marbleTex}),
+  niche: std('#cbc1ae', {map: marbleTex, side: THREE.DoubleSide}),
+  attic: std('#ffffff', {map: atticTex, side: THREE.DoubleSide}),
+  dome: std('#d3cab9', {side: THREE.DoubleSide, roughness: .95}),
+  rib: std('#e3dbcc', {roughness: .9}),
+  cornice: std('#ece5d8'),
+  giallo: std('#c9a862', {roughness: .45}),
+  pavo: std('#e4dccd', {roughness: .5, map: marbleTex}),
+  porphyry: std('#7B2D26', {roughness: .4}),
+  granite: std('#7d7874', {roughness: .55}),
+  rose: std('#9b7a70', {roughness: .55}),
+  capital: std('#e8e1d3', {roughness: .7}),
+  bronze: std('#6d5634', {roughness: .4, metalness: .65}),
+  brick: std('#ffffff', {map: brickTex, side: THREE.DoubleSide}),
+  lead: std('#8f969a', {roughness: .7, side: THREE.DoubleSide}),
+  stucco: std('#cfc7b8'),
+  travertine: std('#d9cfbc', {map: stoneTex}),
+  roof: std('#a65a3c'),
+  water: std('#6f97a8', {roughness: .15, metalness: .2}),
+};
+M.wall.map.repeat.set(6, 1);
+M.wall.side = THREE.DoubleSide;
+
+/* ---------- sky + light ---------- */
+const skyTex = tex(8, 512, (g, w, h) => {
+  const gr = g.createLinearGradient(0, 0, 0, h);
+  gr.addColorStop(0, '#4f7fb0'); gr.addColorStop(.47, '#b5cbdc'); gr.addColorStop(.52, '#d9d2c2'); gr.addColorStop(1, '#a89a84');
+  g.fillStyle = gr; g.fillRect(0, 0, w, h);
+});
+skyTex.wrapS = skyTex.wrapT = THREE.ClampToEdgeWrapping;
+scene.add(new THREE.Mesh(new THREE.SphereGeometry(900, 32, 16), new THREE.MeshBasicMaterial({map: skyTex, side: THREE.BackSide, fog: false})));
+scene.fog = new THREE.Fog(0xd2d2c8, 160, 700);
+
+const hemi = new THREE.HemisphereLight(0xe2eaf2, 0x8a7a64, 0.5);
+scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff1dc, 1.7);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+const sc = sun.shadow.camera;
+sc.left = -48; sc.right = 48; sc.top = 48; sc.bottom = -48; sc.near = 1; sc.far = 300;
+sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.05;
+sun.target.position.set(0, 12, 8);
+scene.add(sun, sun.target);
+
+/* ---------- ground ---------- */
+const piazza = add(new THREE.PlaneGeometry(400, 400), std('#ffffff', {map: cobbleTex}), 0, 0, 0, scene, false);
+piazza.rotation.x = -Math.PI/2;
+
+/* ---------- rotunda interior ---------- */
+const floor = add(new THREE.CircleGeometry(R + .05, 96), std('#ffffff', {map: floorTex, roughness: .45}), 0, .03, 0, scene, false);
+floor.rotation.x = -Math.PI/2;
+
+const LOWER = 10.5, DOOR_H = 7.6, DOOR_HALF = 3.2;
+const gaps = [];
+for (let k = 0; k < 8; k++){
+  const half = k === 0 ? DOOR_HALF : (k === 4 ? 4.6 : 3.9);
+  gaps.push({phi: k*Math.PI/4, g: 2*Math.asin(half/R), half});
+}
+// lower wall piers between the eight openings
+for (let k = 0; k < 8; k++){
+  const a = gaps[k], b = gaps[(k+1)%8];
+  const start = a.phi + a.g/2;
+  const end = b.phi + (k === 7 ? Math.PI*2 : 0) - b.g/2;
+  add(new THREE.CylinderGeometry(R, R, LOWER, 24, 1, true, start, end - start), M.wall, 0, LOWER/2, 0);
+}
+// wall above the door
+add(new THREE.CylinderGeometry(R, R, LOWER - DOOR_H, 8, 1, true, -gaps[0].g/2, gaps[0].g), M.wall, 0, DOOR_H + (LOWER - DOOR_H)/2, 0);
+// entablature zone and attic
+add(new THREE.CylinderGeometry(R, R, 3.5, 128, 1, true), M.wall, 0, LOWER + 1.75, 0);
+add(new THREE.CylinderGeometry(R, R, H - 14, 128, 1, true), M.attic, 0, 14 + (H - 14)/2, 0);
+[[LOWER, .4, .36], [14, .3, .28], [H, .45, .5]].forEach(([y, inset, tube]) => {
+  const t = add(new THREE.TorusGeometry(R - inset, tube, 8, 160), M.cornice, 0, y, 0);
+  t.rotation.x = Math.PI/2;
+});
+
+function makeColumn(h, r, shaftMat, parent){
+  const g = new THREE.Group();
+  add(new THREE.CylinderGeometry(r*1.35, r*1.45, .4, 20), M.capital, 0, .2, 0, g);
+  add(new THREE.CylinderGeometry(r*.88, r, h - 1.2, 20), shaftMat, 0, .4 + (h - 1.2)/2, 0, g);
+  add(new THREE.CylinderGeometry(r*1.45, r*.9, .6, 20), M.capital, 0, h - .5, 0, g);
+  add(new THREE.BoxGeometry(r*3.1, .2, r*3.1), M.capital, 0, h - .1, 0, g);
+  (parent || scene).add(g);
+  return g;
+}
+
+// niches: semicircular (2, 4, 6) and rectangular (1, 3, 5, 7)
+for (let k = 1; k < 8; k++){
+  const {phi, g, half} = gaps[k];
+  const grp = new THREE.Group();
+  grp.position.set(Math.sin(phi)*R*Math.cos(g/2), 0, Math.cos(phi)*R*Math.cos(g/2));
+  grp.rotation.y = phi;
+  scene.add(grp);
+  const hw = half + .12;
+  if (k % 2 === 0){
+    add(new THREE.CylinderGeometry(hw, hw, LOWER, 40, 1, true, -Math.PI/2, Math.PI), M.niche, 0, LOWER/2, 0, grp);
+    const top = add(new THREE.CircleGeometry(hw, 40, 0, Math.PI), M.niche, 0, LOWER, 0, grp);
+    top.rotation.x = Math.PI/2;
+    const bot = add(new THREE.CircleGeometry(hw, 40, 0, Math.PI), M.travertine, 0, .025, 0, grp, false);
+    bot.rotation.x = Math.PI/2;
+  } else {
+    const d = 3.4, w = hw*2;
+    add(new THREE.PlaneGeometry(w, LOWER), M.niche, 0, LOWER/2, d, grp);
+    [-1, 1].forEach(s => { const p = add(new THREE.PlaneGeometry(d, LOWER), M.niche, s*hw, LOWER/2, d/2, grp); p.rotation.y = Math.PI/2; });
+    const top = add(new THREE.PlaneGeometry(w, d), M.niche, 0, LOWER, d/2, grp); top.rotation.x = Math.PI/2;
+    const bot = add(new THREE.PlaneGeometry(w, d), M.travertine, 0, .025, d/2, grp, false); bot.rotation.x = -Math.PI/2;
+  }
+  const colMat = k % 2 ? M.giallo : M.pavo;
+  if (k === 4){
+    [-1, 1].forEach(s => { const c = makeColumn(LOWER - 1, .58, M.pavo, grp); c.position.set(s*(half + .8), 0, -.5); });
+  } else {
+    [-1, 1].forEach(s => { const c = makeColumn(LOWER - 1, .52, colMat, grp); c.position.set(s*half*.48, 0, .25); });
+    add(new THREE.BoxGeometry(hw*2 + .2, 1, 1.1), M.cornice, 0, LOWER - .5, .25, grp);
+  }
+}
+
+// aedicules (small shrines) between the niches
+function triPrism(w, h, depth, mats){
+  const s = new THREE.Shape(); s.moveTo(-w/2, 0); s.lineTo(w/2, 0); s.lineTo(0, h); s.lineTo(-w/2, 0);
+  return new THREE.Mesh(new THREE.ExtrudeGeometry(s, {depth, bevelEnabled: false}), mats);
+}
+const aediculeAngles = [];
+for (let k = 0; k < 8; k++){
+  const phi = (k + .5)*Math.PI/4;
+  aediculeAngles.push(phi);
+  const grp = new THREE.Group();
+  grp.position.set(Math.sin(phi)*(R - .1), 0, Math.cos(phi)*(R - .1));
+  grp.rotation.y = phi;
+  scene.add(grp);
+  add(new THREE.BoxGeometry(3.6, 1.6, 1.5), M.pavo, 0, .8, -.75, grp);
+  add(new THREE.PlaneGeometry(2.1, 3.3), M.porphyry, 0, 3.45, .02, grp, false).rotation.y = Math.PI;
+  [-1, 1].forEach(s => { const c = makeColumn(3.6, .2, k % 2 ? M.porphyry : M.giallo, grp); c.position.set(s*1.3, 1.6, -1.15); });
+  add(new THREE.BoxGeometry(3.6, .4, 1.5), M.cornice, 0, 5.4, -.75, grp);
+  const ped = triPrism(3.8, 1.1, 1.5, M.cornice);
+  ped.position.set(0, 5.6, -1.5); ped.castShadow = ped.receiveShadow = true; grp.add(ped);
+}
+
+/* ---------- dome ---------- */
+const thetaS = Math.asin(OCULUS/R);
+add(new THREE.SphereGeometry(R, 128, 64, 0, Math.PI*2, thetaS, Math.PI/2 - thetaS), M.dome, 0, H, 0);
+// coffer ribs: 5 rings of 28
+const ringsDeg = [3, 13, 22.5, 31, 39, 46.5];
+const rr = R - .35;
+ringsDeg.forEach((d, i) => {
+  const e = THREE.MathUtils.degToRad(d);
+  const t = add(new THREE.TorusGeometry(rr*Math.cos(e), .44 - i*.03, 8, 180), M.rib, 0, H + rr*Math.sin(e), 0);
+  t.rotation.x = Math.PI/2;
+});
+const ribs = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), M.rib, 5*28);
+ribs.castShadow = ribs.receiveShadow = true;
+const dummy = new THREE.Object3D();
+let ri = 0;
+for (let i = 0; i < 5; i++){
+  const e1 = THREE.MathUtils.degToRad(ringsDeg[i]), e2 = THREE.MathUtils.degToRad(ringsDeg[i+1]), em = (e1 + e2)/2;
+  for (let j = 0; j < 28; j++){
+    const th = j*Math.PI*2/28, rh = rr*Math.cos(em);
+    dummy.position.set(rh*Math.sin(th), H + rr*Math.sin(em), rh*Math.cos(th));
+    dummy.lookAt(0, H, 0);
+    dummy.scale.set(.75*Math.cos(em) + .25, rr*(e2 - e1), .85);
+    dummy.updateMatrix();
+    ribs.setMatrixAt(ri++, dummy.matrix);
+  }
+}
+scene.add(ribs);
+
+/* ---------- oculus ---------- */
+const OC_Y = H + R*Math.cos(thetaS);
+add(new THREE.CylinderGeometry(OCULUS, OCULUS, .6, 64, 1, true), M.bronze, 0, OC_Y + .15, 0);
+const ocRing = add(new THREE.TorusGeometry(OCULUS + .1, .22, 8, 64), M.bronze, 0, OC_Y + .45, 0);
+ocRing.rotation.x = Math.PI/2;
+const beam = new THREE.Mesh(
+  new THREE.CylinderGeometry(OCULUS, OCULUS, 1, 40, 1, true),
+  new THREE.MeshBasicMaterial({color: 0xfff1d0, transparent: true, opacity: .07, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false})
+);
+scene.add(beam);
+
+/* ---------- exterior drum + dome ---------- */
+const gOut = 2*Math.asin(DOOR_HALF/OUTER);
+add(new THREE.CylinderGeometry(OUTER, OUTER, DOOR_H, 96, 1, true, gOut/2, Math.PI*2 - gOut), M.brick, 0, DOOR_H/2, 0);
+add(new THREE.CylinderGeometry(OUTER, OUTER, H - DOOR_H, 96, 1, true), M.brick, 0, DOOR_H + (H - DOOR_H)/2, 0);
+[8.5, 14.5, H].forEach(y => { const t = add(new THREE.TorusGeometry(OUTER + .05, .3, 6, 120), M.stucco, 0, y, 0); t.rotation.x = Math.PI/2; });
+const thetaO = Math.asin(OCULUS/OUTER);
+const outerDome = add(new THREE.SphereGeometry(OUTER, 96, 48, 0, Math.PI*2, thetaO, Math.PI/2 - thetaO), M.lead, 0, H, 0);
+outerDome.scale.y = .8;
+for (let i = 0; i < 6; i++){
+  const yTop = 1.1*(i + 1);
+  const rad = OUTER*Math.sqrt(1 - Math.pow(yTop/(OUTER*.8), 2)) + .55;
+  add(new THREE.CylinderGeometry(rad, rad, 1.1, 96), M.stucco, 0, H + 1.1*i + .55, 0);
+}
+
+/* ---------- intermediate block + door ---------- */
+const BZ0 = 21.4, BZ1 = 29.5, BD = BZ1 - BZ0, BH = 22;
+add(new THREE.BoxGeometry(14, BH, BD), M.brick, -10.2, BH/2, BZ0 + BD/2);
+add(new THREE.BoxGeometry(14, BH, BD), M.brick, 10.2, BH/2, BZ0 + BD/2);
+add(new THREE.BoxGeometry(6.4, BH - DOOR_H, BD), M.brick, 0, DOOR_H + (BH - DOOR_H)/2, BZ0 + BD/2);
+const ped2 = triPrism(34.4, 6, BD, [M.stucco, M.lead]);
+ped2.position.set(0, BH, BZ0); ped2.castShadow = ped2.receiveShadow = true; scene.add(ped2);
+add(new THREE.BoxGeometry(6.4, .1, BD + 2.4), M.travertine, 0, .05, BZ0 + BD/2 - 1.2, scene, false);
+[-1, 1].forEach(s => {
+  const leaf = add(new THREE.BoxGeometry(3.1, 7.3, .22), M.bronze, s*3.0, 3.65, 24.2);
+  leaf.rotation.y = Math.PI/2;
+  add(new THREE.BoxGeometry(.5, DOOR_H + .4, .6), M.pavo, s*3.45, (DOOR_H + .4)/2, BZ1 + .2);
+});
+add(new THREE.BoxGeometry(7.4, .6, .6), M.pavo, 0, DOOR_H + .3, BZ1 + .2);
+
+/* ---------- portico ---------- */
+add(new THREE.BoxGeometry(35, .16, 15.6), M.travertine, 0, .08, 37.3, scene, false);
+const xs = [-15, -10.714, -6.429, -2.143, 2.143, 6.429, 10.714, 15];
+const colliders = [];
+xs.forEach(x => { makeColumn(12.6, .78, M.granite).position.set(x, .16, 42.5); colliders.push({x, z: 42.5, r: 1.25}); });
+[0, 2, 5, 7].forEach(i => [37.5, 32.5].forEach(z => {
+  makeColumn(12.6, .78, M.rose).position.set(xs[i], .16, z); colliders.push({x: xs[i], z, r: 1.25});
+}));
+add(new THREE.BoxGeometry(34.4, 2.2, 14.6), M.stucco, 0, 13.86, 36.8);
+add(new THREE.BoxGeometry(35.4, .6, 15.2), M.cornice, 0, 15.26, 36.8);
+const ped = triPrism(35.4, 7, 15.2, [M.stucco, M.lead]);
+ped.position.set(0, 15.56, 29.2); ped.castShadow = ped.receiveShadow = true; scene.add(ped);
+
+const inscription = tex(2048, 96, (g, w, h, font) => {
+  g.fillStyle = '#d8cfbe'; g.fillRect(0, 0, w, h);
+  g.fillStyle = '#5a4528';
+  g.font = `64px ${font || 'Georgia, serif'}`;
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText('M·AGRIPPA·L·F·COS·TERTIVM·FECIT', w/2, h/2 + 4);
+});
+inscription.wrapS = inscription.wrapT = THREE.ClampToEdgeWrapping;
+add(new THREE.PlaneGeometry(30, 1.4), std('#ffffff', {map: inscription}), 0, 13.7, 44.12, scene, false);
+if (document.fonts && document.fonts.load){
+  document.fonts.load('64px Marcellus').then(() => {
+    const g = inscription._canvas.getContext('2d');
+    inscription._draw(g, 2048, 96, '"Marcellus", Georgia, serif');
+    inscription.needsUpdate = true;
+  }).catch(() => {});
+}
+
+/* ---------- piazza: fountain + surrounding buildings ---------- */
+const FX = -2, FZ = 64;
+add(new THREE.CylinderGeometry(4.2, 4.4, .8, 40), M.travertine, FX, .4, FZ);
+add(new THREE.CylinderGeometry(3.8, 3.8, .1, 40), M.water, FX, .76, FZ, scene, false);
+add(new THREE.BoxGeometry(1.8, 2.4, 1.8), M.travertine, FX, 1.6, FZ);
+const obelisk = add(new THREE.CylinderGeometry(.32, .62, 9, 4), M.rose, FX, 2.8 + 4.5, FZ);
+obelisk.rotation.y = Math.PI/4;
+colliders.push({x: FX, z: FZ, r: 5});
+
+function building(x, z, w, d, h, tint){
+  const t = facadeTex.clone(); t.needsUpdate = true; t.repeat.set(Math.max(1, Math.round(w/7)), Math.max(1, Math.round(h/4.8)));
+  const tSide = facadeTex.clone(); tSide.needsUpdate = true; tSide.repeat.set(Math.max(1, Math.round(d/7)), Math.max(1, Math.round(h/4.8)));
+  const face = std(tint, {map: t}), side = std(tint, {map: tSide});
+  add(new THREE.BoxGeometry(w, h, d), [side, side, M.roof, M.roof, face, face], x, h/2, z);
+}
+[[-50, 70, 16, 18, 19, '#ffffff'], [50, 72, 16, 20, 17, '#f0dccb'], [-50, 46, 16, 22, 21, '#f3e3cf'], [50, 46, 16, 24, 18, '#ffffff'],
+ [-50, 18, 16, 26, 20, '#f0dccb'], [50, 16, 16, 24, 22, '#f3e3cf'], [-22, 112, 34, 16, 20, '#f3e3cf'], [16, 112, 30, 16, 18, '#ffffff'],
+ [-50, -14, 16, 30, 18, '#ffffff'], [50, -16, 16, 30, 20, '#f0dccb'], [0, -56, 70, 16, 18, '#f3e3cf']]
+ .forEach(b => building.apply(null, b));
+
+/* ---------- tour stops ---------- */
+const stops = [
+  {title: 'The approach', pos: [10, EYE, 86], look: [0, 10, 30], spot: [10, 2.2, 74],
+   text: 'In Hadrian’s Rome you reached the Pantheon through a long colonnaded courtyard, so the front read as a conventional temple and the round drum behind it stayed mostly hidden. The street was lower then, and steps climbed to the portico. Walk toward the columns.'},
+  {title: 'The portico', pos: [0, EYE, 54], look: [0, 13.6, 44], spot: [8.6, 2.2, 46],
+   text: 'Sixteen monolithic granite columns, quarried in Egypt and shipped to Rome, carry Corinthian capitals. The inscription credits Marcus Agrippa, who built an earlier temple here around 27–25 BCE; Hadrian kept that dedication rather than adding his own name.'},
+  {title: 'The threshold', pos: [0, EYE, 33], look: [0, 4, 16], spot: [1.8, 2.2, 30.5],
+   text: 'The bronze doors, ancient but heavily restored, stand about 7 meters tall. A deep transitional block joins the rectangular temple front to the round hall, so the interior opens up all at once as you step through.'},
+  {title: 'The rotunda', pos: [0, EYE, 17], look: [0, 15, -21], spot: [0, 1.4, 4],
+   text: 'The interior is as tall as it is wide, about 43.3 meters, so a perfect sphere would fit inside and just touch the floor. Concrete walls roughly 6 meters thick, faced with colored marble, hold up a hemispherical dome.'},
+  {title: 'The coffered dome', pos: [0, EYE, 9], look: [0, 33, -11], spot: [0, 31, -13],
+   text: 'Five rings of 28 coffers cut weight from the shell and make the dome seem to recede. Builders also changed the concrete’s aggregate, from heavy stone near the base to light pumice near the top, and thinned the shell as it rises. It is still the largest unreinforced concrete dome in the world.'},
+  {title: 'The oculus', pos: [0, EYE, 1.2], look: [0, 44, 0], spot: [0, OC_Y - 2, 0],
+   text: 'The opening at the top, about 8 meters across, is the only source of light and is open to the sky. Its disk of sunlight travels across the coffers, walls, and floor through the day; move the sunlight slider to watch it. Rain falls through too, and the floor slopes gently to drains.'},
+  {title: 'The marble floor', pos: [0, EYE, -2], look: [0, 0, -11], spot: [3, .35, -9],
+   text: 'The grid of circles and squares is opus sectile, cut stone set in geometric panels. Purple porphyry from Egypt, gray granite, yellow giallo antico from North Africa, and pavonazzetto from Asia Minor brought the empire’s quarries together under visitors’ feet.'},
+  {title: 'Niches and a second life', pos: null, look: null, spot: null,
+   text: 'The niches and aedicules probably held statues of gods, though the original arrangement is uncertain. In 609 CE Pope Boniface IV consecrated the building as the church of Santa Maria ad Martyres, a major reason it survives intact. The painter Raphael was buried here in 1520.'},
+];
+{
+  const phi = aediculeAngles[4];
+  const tx = Math.sin(phi)*(R - 1), tz = Math.cos(phi)*(R - 1);
+  stops[7].pos = [Math.sin(phi)*12, EYE, Math.cos(phi)*12];
+  stops[7].look = [tx, 3.6, tz];
+  stops[7].spot = [Math.sin(phi)*(R - 2.2), 2.2, Math.cos(phi)*(R - 2.2)];
+}
+stops.forEach(s => {
+  const dx = s.look[0] - s.pos[0], dy = s.look[1] - s.pos[1], dz = s.look[2] - s.pos[2];
+  s.yaw = Math.atan2(-dx, -dz);
+  s.pitch = Math.max(-1.45, Math.min(1.5, Math.atan2(dy, Math.hypot(dx, dz))));
+});
+
+/* ---------- self quiz, one question per stop ---------- */
+const quizzes = [
+  {q: 'Why did the Pantheon first look like an ordinary temple to visitors arriving from the north?',
+   options: ['The rotunda was added a century later', 'A colonnaded courtyard hid most of the round drum', 'The portico was taller than the dome', 'A city wall blocked the view of the rotunda'],
+   answer: 1, why: 'Walking up the long courtyard, visitors saw a traditional temple front; the dome’s scale was saved for the interior.'},
+  {q: 'Whose name does the portico inscription credit?',
+   options: ['Hadrian', 'Augustus', 'Marcus Agrippa', 'Trajan'],
+   answer: 2, why: 'Agrippa built an earlier temple on the site around 27–25 BCE. Hadrian kept that dedication instead of naming himself.'},
+  {q: 'What does the deep block behind the portico connect?',
+   options: ['The rectangular temple front and the round rotunda', 'The dome and the drum', 'The two side aisles of the portico', 'The piazza and the fountain'],
+   answer: 0, why: 'It joins two very different geometries, so the round hall opens up all at once as you pass through the doors.'},
+  {q: 'How does the rotunda’s height compare with its diameter?',
+   options: ['The height is about twice the diameter', 'They are equal, about 43.3 meters', 'The diameter is about twice the height', 'The height is about two thirds of the diameter'],
+   answer: 1, why: 'Because height equals diameter, a perfect sphere would fit inside and just touch the floor.'},
+  {q: 'Which of these was NOT used to make the dome lighter?',
+   options: ['Coffers cut into the shell', 'Light pumice aggregate near the top', 'A shell that thins as it rises', 'Steel reinforcing rods'],
+   answer: 3, why: 'The dome is unreinforced concrete. Coffers, lighter aggregate, and a thinning shell did the work.'},
+  {q: 'What role does the oculus play in the interior?',
+   options: ['It is the only source of light and is open to the sky', 'It is a skylight sealed with glass', 'It supports a lantern tower on top of the dome', 'It is decorative; light comes from windows in the drum'],
+   answer: 0, why: 'Sunlight and rain both come through. The moving disk of light makes the dome act a little like a sundial.'},
+  {q: 'What did marbles from Egypt, North Africa, and Asia Minor suggest to visitors?',
+   options: ['That Rome lacked its own building stone', 'Christian symbolism added after 609 CE', 'The reach of the empire, gathered in one floor', 'A copy of a Greek temple floor'],
+   answer: 2, why: 'Stone hauled from distant provinces displayed Rome’s wealth and control over its territories.'},
+  {q: 'What is a major reason the Pantheon survives so intact?',
+   options: ['It was buried and rediscovered in the 1800s', 'It was consecrated as a church in 609 CE', 'It was completely rebuilt during the Renaissance', 'It stood outside the city and was never used'],
+   answer: 1, why: 'As Santa Maria ad Martyres it stayed in continuous use and care, unlike many Roman temples that were stripped for materials.'},
+];
+const quizEl = document.getElementById('quiz');
+function renderQuiz(){
+  if (current < 0){ quizEl.hidden = true; quizEl.innerHTML = ''; return; }
+  const q = quizzes[current];
+  quizEl.hidden = false; quizEl.open = false;
+  quizEl.innerHTML = '<summary>Check yourself</summary><p class="q"></p><div class="opts" role="group"></div><p class="fb" aria-live="polite" hidden></p>';
+  quizEl.querySelector('.q').textContent = q.q;
+  const opts = quizEl.querySelector('.opts'), fb = quizEl.querySelector('.fb');
+  opts.setAttribute('aria-label', 'Answer choices');
+  q.options.forEach((t, i) => {
+    const b = document.createElement('button');
+    b.className = 'opt'; b.textContent = t;
+    b.addEventListener('click', () => {
+      fb.hidden = false; fb.innerHTML = '';
+      const v = document.createElement('b');
+      if (i === q.answer){
+        [...opts.children].forEach(o => { o.disabled = true; });
+        b.classList.add('right');
+        v.textContent = 'Correct. ';
+        fb.append(v, q.why);
+      } else {
+        b.disabled = true; b.classList.add('wrong');
+        v.textContent = 'Not quite. ';
+        fb.append(v, 'Try another answer.');
+      }
+    });
+    opts.appendChild(b);
+  });
+}
+
+/* ---------- hotspots ---------- */
+const spotTex = tex(128, 128, (g) => {
+  const gr = g.createRadialGradient(64, 64, 4, 64, 64, 62);
+  gr.addColorStop(0, 'rgba(255,240,200,1)'); gr.addColorStop(.28, 'rgba(232,192,96,1)');
+  gr.addColorStop(.4, 'rgba(232,192,96,.15)'); gr.addColorStop(1, 'rgba(232,192,96,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+  g.strokeStyle = 'rgba(255,236,190,.95)'; g.lineWidth = 5;
+  g.beginPath(); g.arc(64, 64, 46, 0, Math.PI*2); g.stroke();
+});
+spotTex.wrapS = spotTex.wrapT = THREE.ClampToEdgeWrapping;
+const hotspots = stops.map((s, i) => {
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({map: spotTex, transparent: true, depthWrite: false, fog: false}));
+  sp.position.set(...s.spot); sp.userData.stop = i; sp.renderOrder = 10;
+  scene.add(sp); return sp;
+});
+
+/* ---------- UI wiring ---------- */
+const $ = id => document.getElementById(id);
+const stopsList = $('stops'), toggle = $('stopsToggle'), info = $('info'), reopen = $('reopen');
+stops.forEach((s, i) => {
+  const li = document.createElement('li'); const b = document.createElement('button');
+  b.innerHTML = `<span class="n">${i + 1}</span><span></span>`;
+  b.lastChild.textContent = s.title;
+  b.addEventListener('click', () => { goTo(i); if (innerWidth <= 700) setList(false); });
+  li.appendChild(b); stopsList.appendChild(li);
+});
+function setList(open){ toggle.setAttribute('aria-expanded', String(open)); stopsList.hidden = !open; }
+toggle.addEventListener('click', () => setList(stopsList.hidden));
+if (innerWidth <= 700) setList(false);
+
+let current = -1;
+function showInfo(open){
+  info.hidden = !open; reopen.hidden = open;
+  document.body.classList.toggle('info-open', open);
+}
+function renderInfo(){
+  if (current < 0){
+    $('infoNum').textContent = 'Start here';
+    $('infoTitle').textContent = 'Walk into a Roman temple';
+    $('infoText').textContent = 'Follow eight stops from the piazza to the oculus, or wander on your own. Gold markers in the scene open each stop.';
+    $('prev').textContent = 'Explore on my own';
+    $('next').textContent = 'Start the tour';
+  } else {
+    $('infoNum').textContent = `Stop ${current + 1} of ${stops.length}`;
+    $('infoTitle').textContent = stops[current].title;
+    $('infoText').textContent = stops[current].text;
+    $('prev').textContent = 'Previous';
+    $('next').textContent = current === stops.length - 1 ? 'Back to the start' : 'Next stop';
+  }
+  renderQuiz();
+  $('prev').disabled = current === 0;
+  [...stopsList.querySelectorAll('button')].forEach((b, i) => { if (i === current) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current'); });
+  showInfo(true);
+}
+$('next').addEventListener('click', () => goTo(current < 0 ? 0 : (current + 1) % stops.length));
+$('prev').addEventListener('click', () => { if (current < 0) showInfo(false); else if (current > 0) goTo(current - 1); });
+$('close').addEventListener('click', () => showInfo(false));
+reopen.addEventListener('click', () => { renderInfo(); });
+
+/* ---------- camera + movement ---------- */
+let yaw = stops[0].yaw, pitch = stops[0].pitch;
+camera.position.set(...stops[0].pos);
+let fly = null;
+
+function insideRotunda(z){ return z < 22; }
+function goTo(i){
+  current = i; renderInfo();
+  const s = stops[i], to = new V3(...s.pos);
+  if (reduceMotion){ camera.position.copy(to); yaw = s.yaw; pitch = s.pitch; fly = null; return; }
+  const from = camera.position.clone(), pts = [from];
+  if (insideRotunda(from.z) !== insideRotunda(to.z)) pts.push(new V3(0, EYE, 21), new V3(0, EYE, 31));
+  pts.push(to);
+  const lens = [0]; for (let k = 1; k < pts.length; k++) lens.push(lens[k-1] + pts[k].distanceTo(pts[k-1]));
+  let dyaw = ((s.yaw - yaw + Math.PI) % (Math.PI*2) + Math.PI*2) % (Math.PI*2) - Math.PI;
+  fly = {t: 0, dur: Math.min(4.2, 1.4 + lens[lens.length - 1]/30), pts, lens, y0: yaw, dy: dyaw, p0: pitch, p1: s.pitch};
+}
+function allowed(x, z){
+  if (Math.hypot(x, z) < 19.8) return true;
+  if (Math.abs(x) < 2.5 && z > 15 && z < 31) return true;
+  if (z > 30.2 && z < 102 && Math.abs(x) < 40){
+    for (const c of colliders) if (Math.hypot(x - c.x, z - c.z) < c.r) return false;
+    return true;
+  }
+  return false;
+}
+const keys = {};
+const keyMap = {KeyW: 'f', ArrowUp: 'f', KeyS: 'b', ArrowDown: 'b', KeyA: 'l', ArrowLeft: 'l', KeyD: 'r', ArrowRight: 'r'};
+addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (keyMap[e.code]){ keys[keyMap[e.code]] = true; e.preventDefault(); }
+  if (e.key === 'Shift') keys.run = true;
+});
+addEventListener('keyup', e => { if (keyMap[e.code]) keys[keyMap[e.code]] = false; if (e.key === 'Shift') keys.run = false; });
+addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
+document.querySelectorAll('#pad button').forEach(b => {
+  const d = b.dataset.dir;
+  const on = e => { e.preventDefault(); keys[d] = true; b.setPointerCapture && b.setPointerCapture(e.pointerId); };
+  const off = () => { keys[d] = false; };
+  b.addEventListener('pointerdown', on);
+  ['pointerup', 'pointercancel', 'pointerleave', 'lostpointercapture'].forEach(ev => b.addEventListener(ev, off));
+  b.addEventListener('contextmenu', e => e.preventDefault());
+});
+
+/* ---------- pointer look + picking ---------- */
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), tip = $('tip');
+let drag = null, lastHover = 0;
+function pick(cx, cy){
+  ndc.set(cx/innerWidth*2 - 1, -(cy/innerHeight)*2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const hits = ray.intersectObjects(hotspots);
+  if (!hits.length) return null;
+  const blockers = ray.intersectObjects(scene.children, true).filter(h => !(h.object instanceof THREE.Sprite) && h.object !== beam);
+  if (blockers.length && blockers[0].distance < hits[0].distance - .5) return null;
+  return hits[0].object.userData.stop;
+}
+canvas.addEventListener('pointerdown', e => {
+  drag = {x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY};
+  canvas.setPointerCapture(e.pointerId); canvas.classList.add('dragging'); tip.hidden = true;
+});
+canvas.addEventListener('pointermove', e => {
+  if (drag){
+    const k = e.pointerType === 'touch' ? .0055 : .0042;
+    yaw -= (e.clientX - drag.x)*k; pitch -= (e.clientY - drag.y)*k;
+    pitch = Math.max(-1.45, Math.min(1.52, pitch));
+    drag.x = e.clientX; drag.y = e.clientY;
+    if (fly && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) > 6) fly = null;
+    return;
+  }
+  const now = performance.now(); if (now - lastHover < 70) return; lastHover = now;
+  const s = pick(e.clientX, e.clientY);
+  canvas.classList.toggle('pointing', s !== null);
+  if (s !== null){ tip.textContent = `${s + 1}. ${stops[s].title}`; tip.style.left = e.clientX + 'px'; tip.style.top = e.clientY + 'px'; tip.hidden = false; }
+  else tip.hidden = true;
+});
+canvas.addEventListener('pointerup', e => {
+  if (drag && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 6){
+    const s = pick(e.clientX, e.clientY); if (s !== null) goTo(s);
+  }
+  drag = null; canvas.classList.remove('dragging');
+});
+canvas.addEventListener('pointercancel', () => { drag = null; canvas.classList.remove('dragging'); });
+canvas.addEventListener('pointerleave', () => { tip.hidden = true; });
+
+/* ---------- sun ---------- */
+const sunIn = $('sun'), sunOut = $('sunOut');
+const sunDir = new V3(), up = new V3(0, 1, 0);
+const cLow = new THREE.Color('#ffb784'), cHigh = new THREE.Color('#fff4e2');
+function fmt(h){ const hh = Math.floor(h), mm = Math.round((h - hh)*60); const ap = hh >= 12 ? 'PM' : 'AM'; return `${((hh + 11) % 12) + 1}:${String(mm).padStart(2, '0')} ${ap}`; }
+function setSun(h){
+  const a = Math.PI*(h - 6)/12, s = Math.sin(a);
+  const elev = THREE.MathUtils.degToRad(6 + 64*s);
+  sunDir.set(-Math.cos(a)*Math.cos(elev), Math.sin(elev), -Math.sin(a)*Math.cos(elev)).normalize();
+  sun.position.copy(sun.target.position).addScaledVector(sunDir, 140);
+  sun.color.copy(cLow).lerp(cHigh, Math.min(1, s*1.4));
+  sun.intensity = 1.1 + .7*s;
+  hemi.intensity = .38 + .16*s;
+  const d = sunDir.clone().negate(), horiz = Math.hypot(d.x, d.z);
+  const tFloor = OC_Y/(-d.y), tWall = horiz > 1e-4 ? (R - .2)/horiz : Infinity;
+  const L = Math.min(tFloor, tWall);
+  beam.scale.set(1, L, 1);
+  beam.position.set(0, OC_Y, 0).addScaledVector(d, L/2);
+  beam.quaternion.setFromUnitVectors(up, d);
+  sunOut.textContent = fmt(h);
+}
+sunIn.addEventListener('input', () => setSun(parseFloat(sunIn.value)));
+setSun(parseFloat(sunIn.value));
+
+/* ---------- loop ---------- */
+function resize(){
+  renderer.setSize(innerWidth, innerHeight, false);
+  camera.aspect = innerWidth/innerHeight;
+  camera.fov = camera.aspect < .8 ? 80 : 70;
+  camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize); resize();
+
+const clock = new THREE.Clock();
+const fwd = new V3(), right = new V3();
+function ease(t){ return t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3)/2; }
+function tick(){
+  const dt = Math.min(clock.getDelta(), .05), time = clock.elapsedTime;
+  if (fly){
+    fly.t += dt/fly.dur;
+    const t = Math.min(1, fly.t), e = ease(t), total = fly.lens[fly.lens.length - 1], dist = e*total;
+    let k = 1; while (k < fly.lens.length - 1 && fly.lens[k] < dist) k++;
+    const seg = fly.lens[k] - fly.lens[k-1] || 1;
+    camera.position.lerpVectors(fly.pts[k-1], fly.pts[k], (dist - fly.lens[k-1])/seg);
+    yaw = fly.y0 + fly.dy*e; pitch = fly.p0 + (fly.p1 - fly.p0)*e;
+    if (t >= 1) fly = null;
+  } else if (keys.f || keys.b || keys.l || keys.r){
+    const sp = (keys.run ? 11 : 5.5)*dt;
+    fwd.set(-Math.sin(yaw), 0, -Math.cos(yaw)); right.set(Math.cos(yaw), 0, -Math.sin(yaw));
+    let mx = 0, mz = 0;
+    if (keys.f){ mx += fwd.x; mz += fwd.z; } if (keys.b){ mx -= fwd.x; mz -= fwd.z; }
+    if (keys.r){ mx += right.x; mz += right.z; } if (keys.l){ mx -= right.x; mz -= right.z; }
+    const n = Math.hypot(mx, mz) || 1; mx = mx/n*sp; mz = mz/n*sp;
+    const p = camera.position;
+    if (allowed(p.x + mx, p.z + mz)){ p.x += mx; p.z += mz; }
+    else if (allowed(p.x + mx, p.z)) p.x += mx;
+    else if (allowed(p.x, p.z + mz)) p.z += mz;
+  }
+  camera.rotation.set(pitch, yaw, 0);
+  hotspots.forEach((h, i) => {
+    const d = h.position.distanceTo(camera.position);
+    const pulse = reduceMotion ? 1 : 1 + .12*Math.sin(time*2.4 + i);
+    const s = Math.max(.7, Math.min(4, d*.05))*pulse*(i === current ? .75 : 1);
+    h.scale.set(s, s, 1);
+    h.material.opacity = i === current ? .55 : 1;
+  });
+  renderer.render(scene, camera);
+  requestAnimationFrame(tick);
+}
+renderInfo();
+tick();
+})();
+</script>
+</body>
+</html>

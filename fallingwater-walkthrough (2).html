@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fallingwater walkthrough</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@400;600&family=Alegreya+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#1f241d;
+  --panel:rgba(239,232,216,.93);
+  --ink:#2a2a24;
+  --muted:#635f52;
+  --line:rgba(55,50,38,.22);
+  --accent:#9B2F22;
+  --accent-ink:#f7f1e6;
+  --band:#c9ae74;
+  --hover:rgba(155,47,34,.08);
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --panel:rgba(31,35,30,.92);
+    --ink:#ebe5d6;
+    --muted:#a59f8e;
+    --line:rgba(255,255,255,.15);
+    --accent:#b8473a;
+    --accent-ink:#faf4ea;
+    --band:#d8bd82;
+    --hover:rgba(216,189,130,.1);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --panel:rgba(31,35,30,.92);
+  --ink:#ebe5d6;
+  --muted:#a59f8e;
+  --line:rgba(255,255,255,.15);
+  --accent:#b8473a;
+  --accent-ink:#faf4ea;
+  --band:#d8bd82;
+  --hover:rgba(216,189,130,.1);
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Alegreya Sans",system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased}
+#scene{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#scene.dragging{cursor:grabbing}
+#scene.pointing{cursor:pointer}
+
+.hud-top,.hud-bottom{position:fixed;left:0;right:0;z-index:5;display:flex;justify-content:space-between;gap:12px;pointer-events:none}
+.hud-top{top:0;align-items:flex-start;padding:calc(env(safe-area-inset-top,0px) + 14px) calc(env(safe-area-inset-right,0px) + 14px) 0 calc(env(safe-area-inset-left,0px) + 14px)}
+.hud-bottom{bottom:0;align-items:flex-end;padding:0 calc(env(safe-area-inset-right,0px) + 14px) calc(env(safe-area-inset-bottom,0px) + 14px) calc(env(safe-area-inset-left,0px) + 14px)}
+
+.panel{pointer-events:auto;background:var(--panel);color:var(--ink);border-bottom:4px solid var(--band);border-radius:2px;box-shadow:0 10px 34px rgba(10,12,8,.28);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+
+.title-card{padding:14px 16px 10px;width:18rem;max-width:100%}
+.title-card h1{font-family:"Josefin Sans","Futura","Century Gothic",system-ui,sans-serif;font-weight:600;font-size:1.85rem;line-height:1;letter-spacing:.02em;margin:0;display:flex;align-items:center;gap:.55rem}
+.title-card h1::before{content:"";width:.7rem;height:.7rem;background:var(--accent);flex:none;transform:translateY(-1px)}
+.title-card .sub{margin:.4rem 0 .6rem;color:var(--muted);font-size:.98rem;line-height:1.3}
+.toggle{font:inherit;font-weight:500;background:none;border:0;color:var(--ink);padding:.35rem 0;cursor:pointer;display:flex;align-items:center;gap:.4rem;width:100%;border-top:1px solid var(--line)}
+.toggle::after{content:"";width:.45rem;height:.45rem;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg) translateY(-2px);margin-left:auto;transition:transform .2s}
+.toggle[aria-expanded="true"]::after{transform:rotate(-135deg) translateY(-2px)}
+#stops{list-style:none;margin:0;padding:.2rem 0 0}
+#stops[hidden]{display:none}
+#stops button{font:inherit;display:grid;grid-template-columns:1.6rem 1fr;align-items:baseline;width:100%;text-align:left;background:none;border:0;color:var(--ink);padding:.3rem .35rem;border-radius:2px;cursor:pointer;font-size:1rem}
+#stops button:hover{background:var(--hover)}
+#stops button .n{font-family:"Josefin Sans",system-ui,sans-serif;font-weight:600;color:var(--accent)}
+#stops button[aria-current="step"]{background:var(--hover);font-weight:700}
+
+.ctl-card{padding:12px 16px 12px;width:17rem;max-width:100%}
+.ctl-card label.range{display:flex;justify-content:space-between;font-weight:500;font-size:1rem;gap:.5rem}
+.ctl-card output{font-family:"Josefin Sans",system-ui,sans-serif;font-weight:600;color:var(--accent)}
+.ctl-card input[type=range]{width:100%;accent-color:var(--accent);margin:.5rem 0 .5rem}
+.switch{display:flex;align-items:center;gap:.55rem;font-weight:500;cursor:pointer;padding:.35rem 0;border-top:1px solid var(--line)}
+.switch input{width:1.05rem;height:1.05rem;accent-color:var(--accent);margin:0}
+.legend{margin:.35rem 0 .2rem;padding:0;list-style:none;font-size:.92rem;line-height:1.35;display:grid;gap:.25rem}
+.legend[hidden]{display:none}
+.legend li{display:grid;grid-template-columns:.9rem 1fr;gap:.5rem;align-items:start}
+.legend i{display:block;width:.9rem;height:.9rem;margin-top:.15rem;border-radius:1px}
+.ctl-card .hint{margin:.4rem 0 0;color:var(--muted);font-size:.9rem;line-height:1.35}
+
+.info{padding:14px 18px 14px;width:26rem;max-width:100%;position:relative;max-height:70vh;overflow-y:auto}
+.info[hidden]{display:none}
+.info .num{margin:0 0 .2rem;color:var(--muted);font-size:.92rem}
+.info h2{font-family:"Josefin Sans",system-ui,sans-serif;font-weight:600;font-size:1.45rem;line-height:1.15;margin:0 2rem .45rem 0}
+.info .text{margin:0 0 .8rem;font-size:1.05rem;line-height:1.5}
+.actions{display:flex;gap:.5rem;flex-wrap:wrap}
+.btn{font:inherit;font-weight:500;font-size:1rem;padding:.45rem .9rem;border-radius:2px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer}
+.btn:hover{background:var(--hover)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.1)}
+.btn:disabled{opacity:.45;cursor:default}
+.close{position:absolute;top:10px;right:10px;width:2rem;height:2rem;border:0;background:none;color:var(--muted);cursor:pointer;border-radius:2px;font-size:1.4rem;line-height:1}
+.close:hover{background:var(--hover);color:var(--ink)}
+.reopen{pointer-events:auto}
+.reopen[hidden]{display:none}
+
+.pad{pointer-events:auto;display:none;grid-template-columns:repeat(3,52px);grid-template-rows:repeat(2,52px);gap:6px}
+.coarse .pad{display:grid}
+.pad button{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:50%;font-size:1.1rem;touch-action:none;user-select:none;-webkit-user-select:none;box-shadow:0 6px 18px rgba(10,12,8,.25)}
+.pad button:active{background:var(--accent);color:var(--accent-ink)}
+.pad .f{grid-column:2;grid-row:1}.pad .l{grid-column:1;grid-row:2}.pad .b{grid-column:2;grid-row:2}.pad .r{grid-column:3;grid-row:2}
+
+.tip{position:fixed;z-index:9;pointer-events:none;background:var(--panel);color:var(--ink);padding:.3rem .6rem;border-radius:2px;font-size:.95rem;border-left:3px solid var(--accent);box-shadow:0 6px 18px rgba(10,12,8,.25);transform:translate(14px,14px);white-space:nowrap}
+.tip[hidden]{display:none}
+
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+@media (max-width:700px){
+  .hud-top{flex-direction:column;gap:8px}
+  .title-card,.ctl-card{width:100%}
+  .title-card{display:grid;grid-template-columns:auto 1fr;column-gap:.8rem;align-items:baseline;padding:10px 14px 6px}
+  .title-card h1{font-size:1.35rem}
+  .title-card .sub{margin:0;font-size:.86rem}
+  .title-card .toggle,.title-card #stops{grid-column:1 / -1}
+  .ctl-card{padding:8px 14px}
+  .ctl-card .hint{display:none}
+  .info{width:100%;max-height:52vh}
+  .info h2{font-size:1.25rem}
+  .info .text{font-size:1rem}
+  .info-open.coarse .pad{display:none}
+}
+@media (prefers-reduced-motion:reduce){.toggle::after{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="scene" aria-label="Walkable 3D model of Fallingwater by Frank Lloyd Wright"></canvas>
+
+<div class="hud-top">
+  <header class="panel title-card">
+    <h1>Fallingwater</h1>
+    <p class="sub">Frank Lloyd Wright, 1935–38, Bear Run, Pennsylvania</p>
+    <button class="toggle" id="stopsToggle" aria-expanded="true" aria-controls="stops">Tour stops</button>
+    <ol id="stops"></ol>
+  </header>
+  <div class="panel ctl-card">
+    <label class="range" for="sun">Sunlight <output id="sunOut" for="sun">1:00 PM</output></label>
+    <input type="range" id="sun" min="7" max="19" step="0.25" value="13">
+    <label class="switch"><input type="checkbox" id="struct"> Show structure</label>
+    <ul class="legend" id="legend" hidden>
+      <li><i style="background:#e0612f"></i><span>Concrete beams that carry the cantilevers</span></li>
+      <li><i style="background:#d9a441"></i><span>Stone bolsters and the central stone core</span></li>
+      <li><i style="background:#ffd84a"></i><span>Steel cables added in the early 2000s to stop the sagging</span></li>
+    </ul>
+    <p class="hint" id="hint">Drag to look around. Walk with W A S D or the arrow keys; hold Shift to go faster.</p>
+  </div>
+</div>
+
+<div class="hud-bottom">
+  <section class="panel info" id="info" aria-live="polite">
+    <button class="close" id="close" aria-label="Hide stop info">×</button>
+    <p class="num" id="infoNum"></p>
+    <h2 id="infoTitle"></h2>
+    <p class="text" id="infoText"></p>
+    <div class="actions">
+      <button class="btn" id="prev">Previous</button>
+      <button class="btn primary" id="next">Next stop</button>
+    </div>
+  </section>
+  <button class="btn panel reopen" id="reopen" hidden>Show stop info</button>
+  <div class="pad" id="pad" aria-label="Walk controls">
+    <button class="f" data-dir="f" aria-label="Walk forward">▲</button>
+    <button class="l" data-dir="l" aria-label="Step left">◀</button>
+    <button class="b" data-dir="b" aria-label="Walk back">▼</button>
+    <button class="r" data-dir="r" aria-label="Step right">▶</button>
+  </div>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+const V3 = THREE.Vector3;
+const EYE = 1.7;
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const coarse = matchMedia('(pointer: coarse)').matches;
+if (coarse) document.body.classList.add('coarse');
+document.getElementById('hint').textContent = coarse
+  ? 'Drag to look around. Use the arrows to walk.'
+  : 'Drag to look around. Walk with W A S D or the arrow keys; hold Shift to go faster.';
+
+/* ---------- renderer ---------- */
+const canvas = document.getElementById('scene');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const maxAniso = renderer.capabilities.getMaxAnisotropy();
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(68, 1, 0.08, 1400);
+camera.rotation.order = 'YXZ';
+
+/* ---------- helpers ---------- */
+function tex(w, h, draw, rx, ry){
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  draw(c.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(c);
+  t.encoding = THREE.sRGBEncoding; t.anisotropy = maxAniso;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(rx || 1, ry || 1);
+  return t;
+}
+function speckle(g, w, h, n, a){
+  for (let i = 0; i < n; i++){
+    g.fillStyle = Math.random() < .5 ? `rgba(0,0,0,${Math.random()*a})` : `rgba(255,255,255,${Math.random()*a})`;
+    g.fillRect(Math.random()*w, Math.random()*h, 2, 2);
+  }
+}
+function std(color, o){ return new THREE.MeshStandardMaterial(Object.assign({color, roughness:.85, metalness:0}, o || {})); }
+function add(geo, mat, x, y, z, parent, cast){
+  const m = new THREE.Mesh(geo, mat);
+  m.position.set(x || 0, y || 0, z || 0);
+  m.castShadow = cast !== false; m.receiveShadow = true;
+  (parent || scene).add(m); return m;
+}
+// axis-aligned box from min/max corners
+function boxMM(x0, y0, z0, x1, y1, z1, mat, cast){
+  return add(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), mat, (x0 + x1)/2, (y0 + y1)/2, (z0 + z1)/2, scene, cast);
+}
+
+/* ---------- textures ---------- */
+const stoneTex = tex(512, 512, (g, w, h) => {
+  g.fillStyle = '#3f3b35'; g.fillRect(0, 0, w, h);
+  let y = 0;
+  while (y < h){
+    const rh = 5 + Math.random()*15;
+    let x = -Math.random()*80;
+    while (x < w){
+      const rw = 28 + Math.random()*120, s = 118 + Math.random()*48;
+      g.fillStyle = `rgb(${s},${s - 7},${s - 18})`;
+      g.fillRect(x, y + 1, rw - 3, rh - 2);
+      g.fillStyle = 'rgba(255,255,255,.08)'; g.fillRect(x, y + 1, rw - 3, 1.5);
+      x += rw;
+    }
+    y += rh;
+  }
+  speckle(g, w, h, 6000, .1);
+});
+const stoneCache = {};
+function stoneMat(rx, ry, tint){
+  const key = `${rx.toFixed(1)}|${ry.toFixed(1)}|${tint || ''}`;
+  if (!stoneCache[key]){
+    const t = stoneTex.clone(); t.needsUpdate = true; t.repeat.set(rx, ry);
+    stoneCache[key] = std(tint || '#ffffff', {map: t, roughness: .95});
+  }
+  return stoneCache[key];
+}
+function stoneBox(x0, y0, z0, x1, y1, z1, tint, cast){
+  const w = Math.max(x1 - x0, z1 - z0), h = y1 - y0;
+  return boxMM(x0, y0, z0, x1, y1, z1, stoneMat(Math.max(1, w/3.2), Math.max(1, h/3.2), tint), cast);
+}
+const flagTex = tex(512, 512, (g, w, h) => {
+  g.fillStyle = '#2f2c28'; g.fillRect(0, 0, w, h);
+  for (let r = 0; r < 5; r++){
+    let x = -Math.random()*60;
+    while (x < w){
+      const fw = 70 + Math.random()*90, s = 74 + Math.random()*26;
+      g.fillStyle = `rgb(${s},${s - 4},${s - 10})`;
+      g.beginPath();
+      const y0 = r*102.4;
+      g.moveTo(x + 3 + Math.random()*5, y0 + 3 + Math.random()*5);
+      g.lineTo(x + fw - 3 - Math.random()*6, y0 + 3 + Math.random()*5);
+      g.lineTo(x + fw - 3 - Math.random()*6, y0 + 99 - Math.random()*6);
+      g.lineTo(x + 3 + Math.random()*6, y0 + 99 - Math.random()*6);
+      g.closePath(); g.fill();
+      x += fw;
+    }
+  }
+  speckle(g, w, h, 7000, .12);
+}, 1, 1);
+const groundTex = tex(256, 256, (g, w, h) => {
+  g.fillStyle = '#4a5230'; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 2600; i++){
+    const c = ['#5d6638','#3f4728','#6b5a3a','#56603a','#7a6844'][i % 5];
+    g.fillStyle = c; g.globalAlpha = .55; g.fillRect(Math.random()*w, Math.random()*h, 3 + Math.random()*5, 2 + Math.random()*4);
+  }
+  g.globalAlpha = 1;
+}, 1, 1);
+const waterTex = tex(256, 256, (g, w, h) => {
+  g.fillStyle = '#4e6a61'; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 260; i++){
+    g.strokeStyle = `rgba(220,235,230,${.04 + Math.random()*.12})`; g.lineWidth = 1 + Math.random()*1.5;
+    const x = Math.random()*w, y = Math.random()*h;
+    g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + 20, y + Math.random()*6 - 3, x + 30 + Math.random()*40, y); g.stroke();
+  }
+}, 8, 4);
+const fallTex = tex(128, 256, (g, w, h) => {
+  g.fillStyle = 'rgba(235,242,240,.55)'; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 120; i++){
+    g.fillStyle = `rgba(255,255,255,${.25 + Math.random()*.6})`;
+    g.fillRect(Math.random()*w, Math.random()*h, 1 + Math.random()*3, 20 + Math.random()*90);
+  }
+  for (let i = 0; i < 40; i++){ g.fillStyle = 'rgba(120,150,145,.25)'; g.fillRect(Math.random()*w, Math.random()*h, 2 + Math.random()*4, 40 + Math.random()*80); }
+}, 6, 1);
+
+/* ---------- materials ---------- */
+const M = {
+  concrete: std('#dcc59a', {roughness: .9}),
+  beam: std('#d3bb8e', {roughness: .9}),
+  red: std('#9B2F22', {roughness: .5, metalness: .25}),
+  glass: new THREE.MeshStandardMaterial({color: '#b5ccd0', transparent: true, opacity: .2, roughness: .05, metalness: .1, depthWrite: false}),
+  flag: std('#ffffff', {map: flagTex, roughness: .28}),
+  ground: std('#ffffff', {map: groundTex, roughness: 1}),
+  walnut: std('#6a4a2f', {roughness: .6}),
+  cushion: std('#c2a45e', {roughness: .95}),
+  kettle: std('#b3261e', {roughness: .35, metalness: .3}),
+  water: new THREE.MeshStandardMaterial({color: '#ffffff', map: waterTex, transparent: true, opacity: .9, roughness: .12, metalness: .25}),
+  fall: new THREE.MeshBasicMaterial({map: fallTex, transparent: true, opacity: .9, depthWrite: false, side: THREE.DoubleSide}),
+  trunk: std('#4b3f33', {roughness: 1}),
+  leaf: std('#ffffff', {roughness: .9}),
+  cable: new THREE.MeshBasicMaterial({color: '#ffd84a'}),
+};
+const BOLSTER = std('#ffffff', {map: stoneTex.clone(), roughness: .95}); BOLSTER.map.needsUpdate = true; BOLSTER.map.repeat.set(1, 1);
+const CORE = std('#ffffff', {map: stoneTex.clone(), roughness: .95}); CORE.map.needsUpdate = true; CORE.map.repeat.set(1.4, 5);
+
+/* ---------- sky + light ---------- */
+const skyTex = tex(8, 512, (g, w, h) => {
+  const gr = g.createLinearGradient(0, 0, 0, h);
+  gr.addColorStop(0, '#7ea6c6'); gr.addColorStop(.46, '#cad8d6'); gr.addColorStop(.52, '#b9c4ac'); gr.addColorStop(1, '#53603f');
+  g.fillStyle = gr; g.fillRect(0, 0, w, h);
+});
+skyTex.wrapS = skyTex.wrapT = THREE.ClampToEdgeWrapping;
+scene.add(new THREE.Mesh(new THREE.SphereGeometry(900, 32, 16), new THREE.MeshBasicMaterial({map: skyTex, side: THREE.BackSide, fog: false})));
+scene.fog = new THREE.Fog(0xb8c3aa, 60, 260);
+
+const hemi = new THREE.HemisphereLight(0xe8f0e6, 0x5d5a3e, .62);
+scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff0d8, 1.5);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, {left: -42, right: 42, top: 42, bottom: -42, near: 1, far: 300});
+sun.shadow.bias = -0.0004; sun.shadow.normalBias = .04;
+sun.target.position.set(0, 2, -3);
+scene.add(sun, sun.target);
+
+/* ---------- terrain ---------- */
+stoneBox(-90, -12, -100, 90, 2, -14, '#9c958a');               // hillside behind the house
+stoneBox(-90, -12, -100, 90, 7, -40, '#9c958a', false);        // higher slope
+stoneBox(-90, -14, -14, -18, 0, 8, '#a39b8c');                 // west bank, upper
+stoneBox(-90, -16, 8, -14, -6, 90, '#a39b8c');                 // west bank, lower (downstream ledge)
+stoneBox(-18, -16, 6.5, -14, -6, 8, '#a39b8c');
+stoneBox(-18, -14, -14, 16, 1.7, -5, '#a8a092');               // bedrock the house sits on
+stoneBox(16, -14, -14, 90, 1.7, -5, '#9c958a');                // east bank, upstream side
+stoneBox(16, -16, 6.5, 90, 1, 90, '#9c958a');                  // east bank, downstream side
+stoneBox(-18, -14, -5, 90, -1, 6.5, '#8f887a');                // stream bed above the falls
+stoneBox(-14, -16, 6.5, 16, -8.4, 22, '#8f887a');              // pool below the falls
+stoneBox(-14, -18, 22, 16, -10.4, 90, '#8f887a');              // lower stream
+function groundPlane(x0, x1, z0, z1, y){
+  const t = groundTex.clone(); t.needsUpdate = true; t.repeat.set((x1 - x0)/8, (z1 - z0)/8);
+  const p = add(new THREE.PlaneGeometry(x1 - x0, z1 - z0), std('#ffffff', {map: t, roughness: 1}), (x0 + x1)/2, y + .02, (z0 + z1)/2, scene, false);
+  p.rotation.x = -Math.PI/2; return p;
+}
+groundPlane(-90, 90, -40, -14, 2); groundPlane(-90, 90, -100, -40, 7);
+groundPlane(-90, -18, -14, 8, 0); groundPlane(-90, -14, 8, 90, -6);
+groundPlane(16, 90, -14, -5, 1.7); groundPlane(16, 90, 6.5, 90, 1);
+groundPlane(-18, -12, -14, -5, 1.7);
+// ramps on the west bank
+function rampWedge(x0, x1, zHigh, yHigh, zLow, yLow, mat){
+  const dz = zLow - zHigh, dy = yHigh - yLow, L = Math.hypot(dz, dy), a = Math.atan2(dy, dz);
+  const m = add(new THREE.BoxGeometry(x1 - x0, .4, L), mat, (x0 + x1)/2, (yHigh + yLow)/2 - .2, (zHigh + zLow)/2);
+  m.rotation.x = a; return m;
+}
+rampWedge(-26, -20, -14.4, 2, -6, 0, M.ground);
+rampWedge(-26, -22, 8, 0, 24, -6, M.ground);
+// water
+const waterUp = add(new THREE.PlaneGeometry(108, 11.5), M.water, 36, -.55, .75, scene, false); waterUp.rotation.x = -Math.PI/2;
+const waterPool = add(new THREE.PlaneGeometry(30, 15.5), M.water, 1, -7.6, 14.25, scene, false); waterPool.rotation.x = -Math.PI/2;
+const waterLow = add(new THREE.PlaneGeometry(30, 68), M.water, 1, -9.6, 56, scene, false); waterLow.rotation.x = -Math.PI/2;
+const falls1 = add(new THREE.PlaneGeometry(22, 7.1), M.fall, -1, -4.05, 6.62, scene, false);
+const fallTex2 = fallTex.clone(); fallTex2.needsUpdate = true; fallTex2.repeat.set(4, 1);
+const falls2 = add(new THREE.PlaneGeometry(16, 2.1), new THREE.MeshBasicMaterial({map: fallTex2, transparent: true, opacity: .85, depthWrite: false, side: THREE.DoubleSide}), 2, -8.55, 22.05, scene, false);
+// boulders
+const boulderGeo = new THREE.DodecahedronGeometry(1, 0);
+[[-12, -1, 6, 2.4], [-6, -.8, 7.2, 1.6], [8, -.9, 6.8, 2], [13, -1.2, 5, 2.6], [-10, -8, 12, 2.2], [9, -8, 16, 2.8], [-3, -9.6, 26, 1.8], [12, -9.8, 30, 2.4], [-17, -.4, 2, 2]]
+  .forEach(([x, y, z, s], i) => { const b = add(boulderGeo, stoneMat(1, 1, '#b3ab9b'), x, y, z); b.scale.set(s*1.3, s*.6, s); b.rotation.y = i; });
+
+/* ---------- architecture helpers ---------- */
+// a concrete "tray": slab plus parapets on the listed edges ('n' 's' 'e' 'w'), with rounded caps
+function tray(x0, x1, z0, z1, top, thick, edges, ph){
+  ph = ph || 1.0;
+  if (thick > 0) boxMM(x0, top - thick, z0, x1, top, z1, M.concrete);
+  const t = .36, cap = new THREE.CylinderGeometry(.18, .18, 1, 12);
+  const run = (ax0, az0, ax1, az1) => {
+    boxMM(ax0, top, az0, ax1, top + ph - .18, az1, M.concrete);
+    const lx = ax1 - ax0, lz = az1 - az0;
+    const c = add(cap, M.concrete, (ax0 + ax1)/2, top + ph - .18, (az0 + az1)/2);
+    if (lx > lz){ c.rotation.z = Math.PI/2; c.scale.y = lx; } else { c.rotation.x = Math.PI/2; c.scale.y = lz; }
+  };
+  if (edges.includes('s')) run(x0, z1 - t, x1, z1);
+  if (edges.includes('n')) run(x0, z0, x1, z0 + t);
+  if (edges.includes('e')) run(x1 - t, z0, x1, z1);
+  if (edges.includes('w')) run(x0, z0, x0 + t, z1);
+}
+// a run of glass with Cherokee-red steel frames; open ends leave out the end mullion (corner windows)
+function glassRun(x0, z0, x1, z1, y0, y1, o){
+  o = o || {};
+  const dx = x1 - x0, dz = z1 - z0, L = Math.hypot(dx, dz), h = y1 - y0;
+  const g = new THREE.Group();
+  g.position.set(x0, 0, z0); g.rotation.y = Math.atan2(-dz, dx);
+  const glass = add(new THREE.BoxGeometry(L, h, .03), M.glass, L/2, y0 + h/2, 0, g, false); glass.receiveShadow = false;
+  const n = Math.max(1, Math.round(L/(o.step || 1.3)));
+  for (let i = 0; i <= n; i++){
+    if ((i === 0 && o.openStart) || (i === n && o.openEnd)) continue;
+    add(new THREE.BoxGeometry(.07, h, .09), M.red, i*L/n, y0 + h/2, 0, g);
+  }
+  add(new THREE.BoxGeometry(L, .07, .09), M.red, L/2, y0 + .035, 0, g);
+  add(new THREE.BoxGeometry(L, .07, .09), M.red, L/2, y1 - .035, 0, g);
+  if (o.transom !== false && h > 1.6) add(new THREE.BoxGeometry(L, .05, .08), M.red, L/2, y1 - .55, 0, g);
+  scene.add(g); return g;
+}
+function flagFloor(x0, x1, z0, z1, y){
+  const t = flagTex.clone(); t.needsUpdate = true; t.repeat.set((x1 - x0)/4.5, (z1 - z0)/4.5);
+  const p = add(new THREE.PlaneGeometry(x1 - x0, z1 - z0), std('#ffffff', {map: t, roughness: .28}), (x0 + x1)/2, y + .012, (z0 + z1)/2, scene, false);
+  p.rotation.x = -Math.PI/2;
+}
+
+/* ---------- structure: bolsters, beams, core ---------- */
+const BEAM_X = [-8.5, -4.5, 5.2, 9.2];
+const beams = [], cables = [];
+BEAM_X.forEach(x => {
+  boxMM(x - .7, -1, -6.5, x + .7, .7, -3, BOLSTER);                       // stone bolster
+  beams.push(boxMM(x - .3, .7, -7, x + .3, 1.5, 4.6, M.beam));            // concrete beam cantilevering south
+  const c = add(new THREE.CylinderGeometry(.045, .045, 11.2, 6), M.cable, x, 1.15, -1.2, scene, false);
+  c.rotation.x = Math.PI/2; c.visible = false; cables.push(c);
+});
+// chimney / stone core
+boxMM(-4, -1, -14, 0, 14, -11.9, CORE);
+boxMM(-4.3, 13.6, -14.3, .3, 14, -10.7, M.concrete);
+
+/* ---------- level 1: living room and terraces (floor at y = 2) ---------- */
+const L1 = 2;
+boxMM(-12, 1.5, -11, 1.4, L1, 4.8, M.concrete);
+boxMM(1.4, 1.5, -11, 3.4, L1, -1.2, M.concrete);
+boxMM(3.4, 1.5, -11, 13, L1, 4.8, M.concrete);
+tray(-12, 13, -9, 4.8, L1, 0, 'sew');
+boxMM(-12, L1, -9.36, -9, L1 + .82, -9, M.concrete); boxMM(7, L1, -9.36, 13, L1 + .82, -9, M.concrete);
+boxMM(1.2, 1.5, -15.8, 4.8, L1, -11, M.concrete);                        // entry loggia floor
+flagFloor(-9, 7, -11, 1, L1);
+flagFloor(1.2, 4.8, -15.8, -11, L1);
+// north stone wall with the entry and the hearth
+stoneBox(-9, L1, -11.3, -3.2, 4.6, -10.9);
+stoneBox(-3.2, 3.4, -11.3, -0.8, 4.6, -10.9);
+stoneBox(-0.8, L1, -11.3, 2, 4.6, -10.9);
+stoneBox(2, 4.2, -11.3, 4, 4.6, -10.9);
+stoneBox(4, L1, -11.3, 7, 4.6, -10.9);
+stoneBox(-3.2, L1, -11.95, -0.8, 3.4, -11.8, '#5a544b');                // hearth recess back
+stoneBox(-4, L1, -11.9, -3.2, 4.6, -11.3); stoneBox(-0.8, L1, -11.9, 0, 4.6, -11.3);
+stoneBox(-3.2, 3.4, -11.9, -0.8, 4.6, -11.3);
+stoneBox(-9.2, L1, -11, -8.9, 8.1, -4);                                    // west stone wall (stair side)
+// boulder left in place as the hearth
+const boulder = add(new THREE.DodecahedronGeometry(1, 1), stoneMat(1, 1, '#b8ae9a'), -2, L1 + .02, -9.8);
+boulder.scale.set(1.5, .38, 1.15);
+// red kettle on its swing arm
+add(new THREE.SphereGeometry(.34, 20, 14), M.kettle, -1.4, L1 + 1.05, -10.6);
+add(new THREE.CylinderGeometry(.03, .03, 1.1, 6), M.red, -.9, L1 + 1.3, -10.95).rotation.z = Math.PI/2.4;
+// south, east and west glass
+glassRun(-9, 1, -4.8, 1, L1, 4.6); glassRun(-4.2, 1, 1.4, 1, L1, 4.6);
+glassRun(3.4, 1, 4.9, 1, L1, 4.6); glassRun(5.5, 1, 7, 1, L1, 4.6);
+stoneBox(-4.8, L1, .7, -4.2, 4.6, 1.3); stoneBox(4.9, L1, .7, 5.5, 4.6, 1.3);
+glassRun(7, -11, 7, -3, L1, 4.6); glassRun(7, -1, 7, 1, L1, 4.6);
+glassRun(-9, -4, -9, -3.4, L1, 4.6); glassRun(-9, -1.8, -9, 1, L1, 4.6);
+boxMM(6.95, 4.25, -3, 7.05, 4.6, -1, M.red); boxMM(-9.05, 4.25, -3.4, -8.95, 4.6, -1.8, M.red);
+// built-in seating and a table
+boxMM(-8.6, L1, .05, -5, L1 + .42, .85, M.walnut); boxMM(-8.6, L1 + .42, .1, -5, L1 + .55, .8, M.cushion);
+boxMM(-4, L1, .05, 1.1, L1 + .42, .85, M.walnut); boxMM(-4, L1 + .42, .1, 1.1, L1 + .55, .8, M.cushion);
+boxMM(6.1, L1, -10.4, 6.9, L1 + .42, -4, M.walnut); boxMM(6.15, L1 + .42, -10.3, 6.85, L1 + .55, -4.1, M.cushion);
+boxMM(2.6, L1 + .72, -8.2, 5.2, L1 + .8, -6.4, M.walnut);
+[[2.8, -8], [5, -8], [2.8, -6.6], [5, -6.6]].forEach(([x, z]) => boxMM(x - .05, L1, z - .05, x + .05, L1 + .72, z + .05, M.walnut));
+
+/* ---------- the hatch and the suspended stair to the stream ---------- */
+const STEPS = 14;
+for (let i = 0; i < STEPS; i++){
+  const t = i/(STEPS - 1), z = -0.9 + t*4.2, y = L1 - .2 - t*2.2;
+  boxMM(1.6, y - .06, z - .14, 3.2, y, z + .14, M.walnut);
+}
+[1.52, 3.28].forEach(x => {
+  const s = add(new THREE.BoxGeometry(.08, .28, 4.9), M.red, x, .9, 1.25);
+  s.rotation.x = Math.atan2(2.2, 4.2);
+  boxMM(x - .03, L1, -1.2, x + .03, L1 + .95, -1.1, M.red);
+  boxMM(x - .03, L1 + .92, -1.2, x + .03, L1 + .98, 1, M.red);
+  add(new THREE.CylinderGeometry(.03, .03, 1.8, 6), M.red, x, .6, 3.6, scene);
+});
+boxMM(1.2, -.5, 3.3, 3.6, -.3, 5.6, M.concrete);
+glassRun(1.4, -1.2, 3.4, -1.2, L1, L1 + .9, {transom: false, step: 2});
+
+/* ---------- level 2: master bedroom and its cantilevered terrace (floor at y = 5.2) ---------- */
+const L2 = 5.2;
+boxMM(-6, 4.6, -11, 10, L2, 6.8, M.concrete);
+boxMM(-9, 4.6, -4.4, -6, L2, 1, M.concrete);
+boxMM(-9, 4.6, -11, -6, L2, -9.4, M.concrete);
+tray(-6, 10, -2, 6.8, L2, 0, 'sew');
+flagFloor(-9, 3, -11, -2, L2);
+stoneBox(-9, L2, -11.3, 3, 8.1, -10.9);
+stoneBox(3, L2, -11, 3.4, 8.1, -2);
+glassRun(-6, -2, -1, -2, L2, 8.1); glassRun(1, -2, 3, -2, L2, 8.1);
+boxMM(-1, 7.7, -2.05, 1, 8.1, -1.95, M.red);
+// stair from the living room up to the bedroom level
+for (let i = 0; i < 16; i++){
+  const t = i/15, z = -4.6 - t*4.7, y = L1 + .2 + t*3.0;
+  boxMM(-8.8, y - .1, z - .17, -6.8, y, z + .17, M.walnut);
+}
+boxMM(-6.85, L1 + .8, -9.4, -6.75, L2 + .95, -4.4, M.red);
+// bed and desk
+boxMM(-5, L2, -10.6, -2.2, L2 + .5, -7.6, M.walnut); boxMM(-4.95, L2 + .5, -10.55, -2.25, L2 + .62, -7.65, M.cushion);
+boxMM(.4, L2 + .72, -10.6, 2.6, L2 + .8, -9.6, M.walnut);
+
+/* ---------- level 3: upper rooms with the corner windows (floor at y = 8.4) ---------- */
+const L3 = 8.4;
+boxMM(-6.5, 8.1, -12, 4.5, L3, -1, M.concrete);
+boxMM(-6.5, L3, -1.36, 4.5, L3 + .35, -1, M.concrete);
+boxMM(4.14, L3, -12, 4.5, L3 + .82, -1, M.concrete);
+stoneBox(-6.4, L3, -12.3, 1, 11, -11.9);
+stoneBox(-6.4, L3, -12, -6, 11, -5);
+glassRun(1, -11.9, 1, -5, L3, 11, {openEnd: true});
+glassRun(-6, -5, 1, -5, L3, 11, {openEnd: true});
+boxMM(-7, 11, -13, 2.5, 11.35, -3.5, M.concrete);
+// thin roof edges over level 2 terrace edges for the layered silhouette
+boxMM(3.4, 8.1, -11, 7, 8.4, -6, M.concrete);
+
+/* ---------- trellis bent around a tree ---------- */
+const TY0 = 5.0, TY1 = 5.35;
+[2, 3.6, 5.2, 8.4, 10].forEach(x => boxMM(x - .14, TY0, -21, x + .14, TY1, -11.3, M.concrete));
+boxMM(6.66, TY0, -21, 6.94, TY1, -17.9, M.concrete);
+boxMM(6.66, TY0, -16.1, 6.94, TY1, -11.3, M.concrete);
+const bend = add(new THREE.TorusGeometry(.9, .16, 8, 24, Math.PI), M.concrete, 6.8, (TY0 + TY1)/2, -17);
+bend.rotation.set(Math.PI/2, 0, -Math.PI/2);
+boxMM(1, 4.65, -21.3, 11, TY0, -20.7, M.concrete);
+[1.5, 6, 10.5].forEach(x => stoneBox(x - .4, 2, -21.4, x + .4, 4.65, -20.6));
+add(new THREE.CylinderGeometry(.42, .55, 18, 12), M.trunk, 6.8, 11, -17);
+
+/* ---------- forest ---------- */
+function groundY(x, z){
+  if (z < -40) return 7;
+  if (z < -14) return 2;
+  if (x < -14 && z >= 8) return -6;
+  if (x < -18) return 0;
+  if (x > 16) return z < -5 ? 1.7 : (z > 6.5 ? 1 : null);
+  return null;
+}
+function keepClear(x, z){
+  if (x > -22 && x < 19 && z > -25 && z < 9) return true;     // house + stream under it
+  if (z > -6 && z < 8) return true;                           // stream channel
+  if (x > -16 && x < 18 && z > 5) return true;                // pools and lower stream
+  if (x > -33 && x < -12 && z > 22 && z < 48) return true;    // downstream viewpoint
+  if (x > -28 && x < -19 && z > -16 && z < 26) return true;   // trail and ramps
+  if (x > -28 && x < 14 && z > -24 && z < -13) return true;   // north path
+  return false;
+}
+const treeSpots = [];
+let tries = 0;
+while (treeSpots.length < 150 && tries < 4000){
+  tries++;
+  const x = Math.random()*170 - 85, z = Math.random()*170 - 90;
+  const y = groundY(x, z);
+  if (y === null || keepClear(x, z)) continue;
+  if (treeSpots.some(t => Math.hypot(t.x - x, t.z - z) < 4.2)) continue;
+  treeSpots.push({x, y, z, h: 11 + Math.random()*9});
+}
+treeSpots.push({x: 6.8, y: 2, z: -17, h: 18, canopyOnly: true});
+treeSpots.push({x: -28, y: -6, z: 26, h: 13}, {x: -30, y: -6, z: 36, h: 16}, {x: -13, y: -6, z: 46, h: 14});
+const trunks = new THREE.InstancedMesh(new THREE.CylinderGeometry(.3, .5, 1, 7), M.trunk, treeSpots.length);
+const blobsPer = 3;
+const canopy = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 1), M.leaf, treeSpots.length*blobsPer);
+trunks.castShadow = canopy.castShadow = true; canopy.receiveShadow = true;
+const greens = ['#4f7a2e', '#6b9437', '#3e6626', '#5c8a34', '#7aa142'].map(c => new THREE.Color(c));
+const d = new THREE.Object3D();
+let ci = 0;
+treeSpots.forEach((t, i) => {
+  d.position.set(t.x, t.y + t.h/2, t.z); d.scale.set(1, t.canopyOnly ? .001 : t.h, 1); d.rotation.set(0, 0, 0); d.updateMatrix();
+  trunks.setMatrixAt(i, d.matrix);
+  for (let k = 0; k < blobsPer; k++){
+    const r = 3 + Math.random()*2.6;
+    d.position.set(t.x + Math.random()*3 - 1.5, t.y + t.h - 1 + k*1.6 - Math.random(), t.z + Math.random()*3 - 1.5);
+    d.scale.set(r, r*.75, r); d.rotation.set(Math.random(), Math.random(), 0); d.updateMatrix();
+    canopy.setMatrixAt(ci, d.matrix); canopy.setColorAt(ci, greens[(i + k) % greens.length]); ci++;
+  }
+});
+scene.add(trunks, canopy);
+// rhododendron undergrowth
+const bushSpots = [];
+for (let i = 0; i < 400 && bushSpots.length < 90; i++){
+  const x = Math.random()*120 - 60, z = Math.random()*120 - 60, y = groundY(x, z);
+  if (y === null || keepClear(x, z)) continue;
+  bushSpots.push([x, y, z]);
+}
+[[-15, -6, 30], [-25, -6, 28], [-14, -6, 40], [-31, -6, 42], [-16.5, 0, 4], [-20, 0, -2], [18, 1, 10], [20, 1.7, -8], [-12, 2, -23]].forEach(b => bushSpots.push(b));
+const bushes = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 1), std('#ffffff', {roughness: .9}), bushSpots.length);
+bushes.castShadow = bushes.receiveShadow = true;
+const bushGreens = ['#2f5224', '#3d6a2b', '#466f30'].map(c => new THREE.Color(c));
+bushSpots.forEach(([x, y, z], i) => {
+  const s = 1 + Math.random()*1.3;
+  d.position.set(x, y + s*.5, z); d.scale.set(s*1.4, s, s*1.2); d.rotation.set(0, Math.random()*3, 0); d.updateMatrix();
+  bushes.setMatrixAt(i, d.matrix); bushes.setColorAt(i, bushGreens[i % 3]);
+});
+scene.add(bushes);
+
+/* ---------- walkable areas ---------- */
+const rect = (x0, x1, z0, z1, y) => ({x0, x1, z0, z1, y});
+const ramp = (x0, x1, z0, z1, a0, a1, y0, y1) => ({x0, x1, z0, z1, a0, a1, y0, y1});
+const REGIONS = [
+  rect(-32, -14, 24, 46, -6),                         // downstream viewpoint ledge
+  ramp(-26, -22, 8, 24, 8, 24, 0, -6),                // trail down to the ledge
+  rect(-40, -18, -14.4, 8, 0),                        // west bank
+  ramp(-26, -20, -14.4, -6, -6, -14.4, 0, 2),         // ramp up to the woods path
+  rect(-26, 12, -22, -14.2, 2),                       // path through the woods, under the trellis
+  rect(2.2, 3.8, -15.8, -10.4, L1),                   // entry
+  rect(-6.8, 6.6, -10.6, -0.2, L1),                   // living room
+  rect(-8.6, -6.8, -4.4, -0.2, L1),
+  ramp(1.6, 3.2, -1, 3.4, -1, 3.4, L1, -.3),          // hatch stair
+  rect(1.2, 3.6, 3.4, 5.6, -.3),                      // landing over the stream
+  rect(6.4, 7.8, -3, -1, L1), rect(7.6, 12.4, -8.6, 4.4, L1),
+  rect(-11.4, 1.4, 1.4, 4.4, L1), rect(3.4, 12.4, 1.4, 4.4, L1),
+  rect(-9.8, -8.4, -3.4, -1.8, L1), rect(-11.4, -9.6, -8.6, 4.4, L1),
+  ramp(-8.8, -6.8, -9.4, -4.4, -4.4, -9.4, L1, L2),   // stair up to level 2
+  rect(-8.8, -6, -10.6, -9.4, L2), rect(-6, 2.6, -10.6, -2.4, L2),
+  rect(-1, 1, -2.6, -1.4, L2), rect(-5.6, 9.6, -1.6, 6.4, L2),
+];
+const COLLIDERS = [
+  {x: -2, z: -9.9, r: 1.45, y: L1}, {x: 6.8, z: -17, r: .8, y: 2},
+  {x: 1.5, z: -21, r: .6, y: 2}, {x: 6, z: -21, r: .6, y: 2}, {x: 10.5, z: -21, r: .6, y: 2},
+  {x: -3.6, z: -10.1, r: 1.2, y: L2}, {x: 3.9, z: -7.3, r: 1.2, y: L1},
+];
+function floorAt(x, z, cur){
+  let best = null;
+  for (const r of REGIONS){
+    if (x < r.x0 || x > r.x1 || z < r.z0 || z > r.z1) continue;
+    let y = r.y;
+    if (y === undefined){ const t = Math.max(0, Math.min(1, (z - r.a0)/(r.a1 - r.a0))); y = r.y0 + (r.y1 - r.y0)*t; }
+    if (best === null || Math.abs(y - cur) < Math.abs(best - cur)) best = y;
+  }
+  if (best === null || Math.abs(best - cur) > .65) return null;
+  for (const c of COLLIDERS) if (Math.abs(c.y - best) < 1 && Math.hypot(x - c.x, z - c.z) < c.r) return null;
+  return best;
+}
+
+/* ---------- tour stops ---------- */
+const stops = [
+  {title: 'The view from downstream', pos: [-22, -6, 40], look: [-1, 3.5, -3], spot: [-17, -4.6, 33],
+   text: 'Wright turned down a building site with a conventional view of the falls. Instead he set the house right over them, so the Kaufmanns would live with the waterfall rather than look at it. The stacked terraces echo the rock ledges of the stream banks below.'},
+  {title: 'Arriving through the woods', pos: [-12, 2, -19], look: [3, 3.6, -15], spot: [-5, 3.4, -18],
+   text: 'Edgar Kaufmann Sr., owner of a huge Pittsburgh department store, wanted a weekend house in the country. Wright first visited the site in December 1934. By most accounts he drew the whole design in about two hours in 1935, while Kaufmann was driving to Taliesin to see it.'},
+  {title: 'A beam bent for a tree', pos: [3.2, 2, -21.6], look: [7.2, 5.2, -17], spot: [7.9, 5.9, -17],
+   text: 'The concrete trellis over the path behind the house curves around a tree that was already growing there. It is a small gesture, but it shows how Wright let the site shape the building instead of clearing the site to fit the building.'},
+  {title: 'The living room', pos: [5.6, L1, -9.4], look: [-4, 3, -.5], spot: [-6.5, 3.2, -1.2],
+   text: 'There are no solid walls facing the falls, only glass, stone piers, and the central stone core. The low ceiling pushes your view outward to the horizon and the trees. The flagstone floor is waxed so it gleams like wet rocks in the stream.'},
+  {title: 'The hearth boulder', pos: [-.4, L1, -6.4], look: [-2, 2.3, -9.8], spot: [-2, 2.95, -9.4],
+   text: 'Wright left a rock outcropping in place where it rose above the floor and built the hearth around it. This is organic architecture at its most literal: the house grows out of the hillside, and the earth itself comes into the room.'},
+  {title: 'Steps down to the stream', pos: [2.4, -.3, 5.1], look: [2.4, 2.6, -2], spot: [2.4, 2.75, -.6],
+   text: 'A glass hatch in the living room opens onto a stair that hangs beneath the terrace and ends just above the water. It ties the room directly to the stream and lets its sound and cool air move up into the house.'},
+  {title: 'Cantilevers over the falls', pos: [5, L2, 5.6], look: [-3, -4, 24], spot: [-1, 6.6, 6.1],
+   text: 'Reinforced (ferro-concrete) cantilevers carry the terraces out over the falls; the master bedroom terrace reaches about six feet beyond the living room below. Kaufmann’s engineer doubted the design, and the cantilevers did sag, by more than seven inches by 2001, until tensioned cables stabilized them. Turn on Show structure to see the beams and cables.'},
+  {title: 'Corners that disappear', pos: [5.6, L2, 6], look: [1, 10, -5], spot: [1.25, 9.7, -4.75],
+   text: 'Up here, glass panes meet at the corners with no mullion between them, so the corner of the room seems to dissolve. The stone core rises through every level and stands in for the side walls. Wright painted the concrete a warm, earthy tone rather than the stark white of European modernism.'},
+];
+stops.forEach(s => {
+  s.floor = s.pos[1];
+  s.cam = [s.pos[0], s.pos[1] + EYE, s.pos[2]];
+  const dx = s.look[0] - s.cam[0], dy = s.look[1] - s.cam[1], dz = s.look[2] - s.cam[2];
+  s.yaw = Math.atan2(-dx, -dz);
+  s.pitch = Math.max(-1.45, Math.min(1.45, Math.atan2(dy, Math.hypot(dx, dz))));
+});
+
+/* ---------- hotspots ---------- */
+const spotTex = tex(128, 128, (g) => {
+  const gr = g.createRadialGradient(64, 64, 4, 64, 64, 62);
+  gr.addColorStop(0, 'rgba(255,244,210,1)'); gr.addColorStop(.28, 'rgba(236,196,96,1)');
+  gr.addColorStop(.4, 'rgba(236,196,96,.15)'); gr.addColorStop(1, 'rgba(236,196,96,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+  g.strokeStyle = 'rgba(255,240,200,.95)'; g.lineWidth = 5;
+  g.beginPath(); g.arc(64, 64, 46, 0, Math.PI*2); g.stroke();
+});
+spotTex.wrapS = spotTex.wrapT = THREE.ClampToEdgeWrapping;
+const hotspots = stops.map((s, i) => {
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({map: spotTex, transparent: true, depthWrite: false, fog: false}));
+  sp.position.set(...s.spot); sp.userData.stop = i; sp.renderOrder = 10;
+  scene.add(sp); return sp;
+});
+
+/* ---------- UI ---------- */
+const $ = id => document.getElementById(id);
+const stopsList = $('stops'), toggle = $('stopsToggle'), info = $('info'), reopen = $('reopen');
+stops.forEach((s, i) => {
+  const li = document.createElement('li'), b = document.createElement('button');
+  b.innerHTML = `<span class="n">${i + 1}</span><span></span>`;
+  b.lastChild.textContent = s.title;
+  b.addEventListener('click', () => { goTo(i); if (innerWidth <= 700) setList(false); });
+  li.appendChild(b); stopsList.appendChild(li);
+});
+function setList(open){ toggle.setAttribute('aria-expanded', String(open)); stopsList.hidden = !open; }
+toggle.addEventListener('click', () => setList(stopsList.hidden));
+if (innerWidth <= 700) setList(false);
+
+let current = -1;
+function showInfo(open){ info.hidden = !open; reopen.hidden = open; document.body.classList.toggle('info-open', open); }
+function renderInfo(){
+  if (current < 0){
+    $('infoNum').textContent = 'Start here';
+    $('infoTitle').textContent = 'Walk into Fallingwater';
+    $('infoText').textContent = 'Follow eight stops from the stream below the falls, into the house, and out onto its cantilevered terraces, or wander on your own. Gold markers in the scene open each stop.';
+    $('prev').textContent = 'Explore on my own';
+    $('next').textContent = 'Start the tour';
+    $('prev').disabled = false;
+  } else {
+    $('infoNum').textContent = `Stop ${current + 1} of ${stops.length}`;
+    $('infoTitle').textContent = stops[current].title;
+    $('infoText').textContent = stops[current].text;
+    $('prev').textContent = 'Previous';
+    $('next').textContent = current === stops.length - 1 ? 'Back to the start' : 'Next stop';
+    $('prev').disabled = current === 0;
+  }
+  [...stopsList.querySelectorAll('button')].forEach((b, i) => { if (i === current) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current'); });
+  showInfo(true);
+}
+$('next').addEventListener('click', () => goTo(current < 0 ? 0 : (current + 1) % stops.length));
+$('prev').addEventListener('click', () => { if (current < 0) showInfo(false); else if (current > 0) goTo(current - 1); });
+$('close').addEventListener('click', () => showInfo(false));
+reopen.addEventListener('click', renderInfo);
+
+// structure view
+const structBox = $('struct'), legend = $('legend');
+const beamBase = M.beam.color.clone(), boltBase = BOLSTER.color.clone(), coreBase = CORE.color.clone();
+function setStructure(on){
+  M.concrete.transparent = on; M.concrete.opacity = on ? .22 : 1; M.concrete.depthWrite = !on; M.concrete.needsUpdate = true;
+  M.beam.color.set(on ? '#e0612f' : beamBase); M.beam.emissive.set(on ? '#5a1c08' : '#000000');
+  BOLSTER.color.set(on ? '#f0b850' : boltBase); CORE.color.set(on ? '#f0b850' : coreBase);
+  cables.forEach(c => c.visible = on);
+  legend.hidden = !on;
+}
+structBox.addEventListener('change', () => setStructure(structBox.checked));
+
+/* ---------- camera + movement ---------- */
+let yaw = stops[0].yaw, pitch = stops[0].pitch, floorY = stops[0].floor;
+camera.position.set(...stops[0].cam);
+let fly = null;
+function goTo(i){
+  current = i; renderInfo();
+  const s = stops[i], to = new V3(...s.cam);
+  const dyaw = ((s.yaw - yaw + Math.PI) % (Math.PI*2) + Math.PI*2) % (Math.PI*2) - Math.PI;
+  if (reduceMotion){ camera.position.copy(to); yaw = s.yaw; pitch = s.pitch; floorY = s.floor; fly = null; return; }
+  fly = {t: 0, dur: Math.min(3.6, 1.3 + camera.position.distanceTo(to)/25), from: camera.position.clone(), to, y0: yaw, dy: dyaw, p0: pitch, p1: s.pitch, floor: s.floor};
+}
+const keys = {};
+const keyMap = {KeyW: 'f', ArrowUp: 'f', KeyS: 'b', ArrowDown: 'b', KeyA: 'l', ArrowLeft: 'l', KeyD: 'r', ArrowRight: 'r'};
+addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (keyMap[e.code]){ keys[keyMap[e.code]] = true; e.preventDefault(); }
+  if (e.key === 'Shift') keys.run = true;
+});
+addEventListener('keyup', e => { if (keyMap[e.code]) keys[keyMap[e.code]] = false; if (e.key === 'Shift') keys.run = false; });
+addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
+document.querySelectorAll('#pad button').forEach(b => {
+  const dir = b.dataset.dir;
+  const on = e => { e.preventDefault(); keys[dir] = true; if (b.setPointerCapture) b.setPointerCapture(e.pointerId); };
+  const off = () => { keys[dir] = false; };
+  b.addEventListener('pointerdown', on);
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => b.addEventListener(ev, off));
+  b.addEventListener('contextmenu', e => e.preventDefault());
+});
+
+/* ---------- pointer look + picking ---------- */
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), tip = $('tip');
+let drag = null, lastHover = 0;
+const pickables = [];
+scene.traverse(o => { if (o.isMesh && !(o.material && o.material.transparent)) pickables.push(o); });
+function pick(cx, cy){
+  ndc.set(cx/innerWidth*2 - 1, -(cy/innerHeight)*2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const hits = ray.intersectObjects(hotspots);
+  if (!hits.length) return null;
+  const blockers = ray.intersectObjects(pickables, false).filter(h => !(h.object.material && h.object.material.transparent) && h.distance < 600);
+  if (blockers.length && blockers[0].distance < hits[0].distance - .6) return null;
+  return hits[0].object.userData.stop;
+}
+canvas.addEventListener('pointerdown', e => {
+  drag = {x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY};
+  canvas.setPointerCapture(e.pointerId); canvas.classList.add('dragging'); tip.hidden = true;
+});
+canvas.addEventListener('pointermove', e => {
+  if (drag){
+    const k = e.pointerType === 'touch' ? .0055 : .0042;
+    yaw -= (e.clientX - drag.x)*k; pitch -= (e.clientY - drag.y)*k;
+    pitch = Math.max(-1.45, Math.min(1.45, pitch));
+    drag.x = e.clientX; drag.y = e.clientY;
+    if (fly && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) > 6){ floorY = fly.floor; camera.position.copy(fly.to); fly = null; }
+    return;
+  }
+  const now = performance.now(); if (now - lastHover < 70) return; lastHover = now;
+  const s = pick(e.clientX, e.clientY);
+  canvas.classList.toggle('pointing', s !== null);
+  if (s !== null){ tip.textContent = `${s + 1}. ${stops[s].title}`; tip.style.left = e.clientX + 'px'; tip.style.top = e.clientY + 'px'; tip.hidden = false; }
+  else tip.hidden = true;
+});
+canvas.addEventListener('pointerup', e => {
+  if (drag && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 6){ const s = pick(e.clientX, e.clientY); if (s !== null) goTo(s); }
+  drag = null; canvas.classList.remove('dragging');
+});
+canvas.addEventListener('pointercancel', () => { drag = null; canvas.classList.remove('dragging'); });
+canvas.addEventListener('pointerleave', () => { tip.hidden = true; });
+
+/* ---------- sun ---------- */
+const sunIn = $('sun'), sunOut = $('sunOut'), sunDir = new V3();
+const cLow = new THREE.Color('#ffb17a'), cHigh = new THREE.Color('#fff3df');
+function fmt(h){ const hh = Math.floor(h), mm = Math.round((h - hh)*60), ap = hh >= 12 ? 'PM' : 'AM'; return `${((hh + 11) % 12) + 1}:${String(mm).padStart(2, '0')} ${ap}`; }
+function setSun(h){
+  const a = Math.PI*(h - 7)/12, s = Math.sin(a);
+  const elev = THREE.MathUtils.degToRad(8 + 58*s);
+  sunDir.set(Math.cos(a)*Math.cos(elev), Math.sin(elev), Math.sin(a)*Math.cos(elev)*.9 + .1).normalize();
+  sun.position.copy(sun.target.position).addScaledVector(sunDir, 150);
+  sun.color.copy(cLow).lerp(cHigh, Math.min(1, s*1.4));
+  sun.intensity = .9 + .75*s; hemi.intensity = .45 + .2*s;
+  sunOut.textContent = fmt(h);
+}
+sunIn.addEventListener('input', () => setSun(parseFloat(sunIn.value)));
+setSun(parseFloat(sunIn.value));
+
+/* ---------- loop ---------- */
+function resize(){
+  renderer.setSize(innerWidth, innerHeight, false);
+  camera.aspect = innerWidth/innerHeight;
+  camera.fov = camera.aspect < .8 ? 78 : 68;
+  camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize); resize();
+const clock = new THREE.Clock();
+function ease(t){ return t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3)/2; }
+function tick(){
+  const dt = Math.min(clock.getDelta(), .05), time = clock.elapsedTime;
+  if (fly){
+    fly.t += dt/fly.dur;
+    const t = Math.min(1, fly.t), e = ease(t);
+    camera.position.lerpVectors(fly.from, fly.to, e);
+    yaw = fly.y0 + fly.dy*e; pitch = fly.p0 + (fly.p1 - fly.p0)*e;
+    if (t >= 1){ floorY = fly.floor; fly = null; }
+  } else {
+    if (keys.f || keys.b || keys.l || keys.r){
+      const sp = (keys.run ? 9 : 4.2)*dt;
+      const fx = -Math.sin(yaw), fz = -Math.cos(yaw), rx = Math.cos(yaw), rz = -Math.sin(yaw);
+      let mx = 0, mz = 0;
+      if (keys.f){ mx += fx; mz += fz; } if (keys.b){ mx -= fx; mz -= fz; }
+      if (keys.r){ mx += rx; mz += rz; } if (keys.l){ mx -= rx; mz -= rz; }
+      const n = Math.hypot(mx, mz) || 1; mx = mx/n*sp; mz = mz/n*sp;
+      const p = camera.position;
+      let f = floorAt(p.x + mx, p.z + mz, floorY);
+      if (f !== null){ p.x += mx; p.z += mz; floorY = f; }
+      else if ((f = floorAt(p.x + mx, p.z, floorY)) !== null){ p.x += mx; floorY = f; }
+      else if ((f = floorAt(p.x, p.z + mz, floorY)) !== null){ p.z += mz; floorY = f; }
+    }
+    const targetY = floorY + EYE;
+    camera.position.y += (targetY - camera.position.y)*Math.min(1, dt*10);
+  }
+  camera.rotation.set(pitch, yaw, 0);
+  if (!reduceMotion){
+    waterTex.offset.x = (time*.12) % 1;
+    fallTex.offset.y = (time*.9) % 1;
+    fallTex2.offset.y = (time*.9) % 1;
+  }
+  hotspots.forEach((h, i) => {
+    const dist = h.position.distanceTo(camera.position);
+    const pulse = reduceMotion ? 1 : 1 + .12*Math.sin(time*2.4 + i);
+    const s = Math.max(.5, Math.min(3.2, dist*.05))*pulse*(i === current ? .75 : 1);
+    h.scale.set(s, s, 1);
+    h.material.opacity = i === current ? .55 : 1;
+  });
+  renderer.render(scene, camera);
+  requestAnimationFrame(tick);
+}
+renderInfo();
+tick();
+})();
+</script>
+</body>
+</html>
